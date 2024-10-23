@@ -1,4 +1,3 @@
-import cuid from "cuid";
 import { eq } from "drizzle-orm";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 import * as HttpStatusPhrases from "stoker/http-status-phrases";
@@ -9,7 +8,6 @@ import type { GetOneRoute, ListRoute, RemoveRoute, UpdateRoute } from "@/openapi
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { ZOD_ERROR_CODES, ZOD_ERROR_MESSAGES } from "@/lib/constants";
-import { hashPassword } from "@/utils/hash-password";
 
 // get all users
 export const getAll: AppRouteHandler<ListRoute> = async (c) => {
