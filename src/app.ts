@@ -1,11 +1,12 @@
+
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { notFound, onError } from "stoker/middlewares";
 import { defaultHook } from "stoker/openapi";
-
-// import createApp from "./lib/create-app";
 import configureOpenAPI from "./lib/openapi";
 import auth from "./routes/auth.route";
 import users from "./routes/users.route";
+
+// import createApp from "./lib/create-app";
 
 export function createRouter() {
   return new OpenAPIHono({
