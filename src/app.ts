@@ -1,7 +1,7 @@
-import createApp from "@/lib/create-app";
-import configureOpenAPI from "@/lib/openapi";
-import auth from "@/routes/auth.route";
-import users from "@/routes/users.route";
+import createApp from "./lib/create-app";
+import configureOpenAPI from "./lib/openapi";
+import auth from "./routes/auth.route";
+import users from "./routes/users.route";
 
 const app = createApp();
 

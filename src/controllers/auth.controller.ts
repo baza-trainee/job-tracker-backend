@@ -2,13 +2,13 @@ import cuid from "cuid";
 import jwt from "jsonwebtoken";
 import * as HttpStatusCodes from "stoker/http-status-codes";
 
-import type { AppRouteHandler } from "@/lib/types";
-import type { RegisterRoute } from "@/openapi/auth.api";
+import type { AppRouteHandler } from "../lib/types";
+import type { RegisterRoute } from "../openapi/auth.api";
 
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import env from "@/env";
-import { hashPassword } from "@/utils/hash-password";
+import { db } from "../db";
+import { users } from "../db/schema";
+import env from "../env";
+import { hashPassword } from "../utils/hash-password";
 
 // register user
 export const registerUser: AppRouteHandler<RegisterRoute> = async (c) => {
