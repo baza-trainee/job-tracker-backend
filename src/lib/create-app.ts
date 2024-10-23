@@ -5,7 +5,7 @@ import { defaultHook } from "stoker/openapi";
 import type { AppBindings } from "./types";
 
 export function createRouter() {
-  return new OpenAPIHono<AppBindings>({
+  return new OpenAPIHono({
     strict: false,
     defaultHook,
   });
