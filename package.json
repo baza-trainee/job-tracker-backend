@@ -6,7 +6,8 @@
     "start": "node ./dist/src/index.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "lint:fix": "npm run lint --fix"
+    "lint:fix": "npm run lint --fix",
+    "build": "tsc"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.2",
