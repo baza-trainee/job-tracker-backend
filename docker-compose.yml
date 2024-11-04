@@ -1,0 +1,25 @@
+version: '3.5'
+
+services:
+  server:
+    build: ./bazaskill-backend
+    container_name: server
+    restart: always
+    ports:
+      - "4000:4000"
+    networks:
+      - bazaskill
+  client:
+    build: ./bazaskill-frontend
+    container_name: client
+    restart: always
+    ports:
+      - "3000:3000"
+    networks:
+      - bazaskill
+    depends_on:
+      - server
+networks:
+  bazaskill:
+    name: bazaskill
+
