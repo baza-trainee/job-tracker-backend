@@ -12,8 +12,8 @@ async function bootstrap() {
   app.enableCors();
 
   const config = new DocumentBuilder()
-    .setTitle('Job Tracker API example')
-    .setDescription('Baza Skill API description')
+    .setTitle('Job Tracker API')
+    .setDescription('Example of Job Tracker API routes')
     .setVersion('1.0')
     .addTag('Job Tracker API')
     .build();

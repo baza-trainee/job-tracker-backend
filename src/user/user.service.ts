@@ -34,9 +34,10 @@ export class UserService {
       username: createUserDto.username,
     });
 
-    const token = this.jwtService.sign({ email: createUserDto.email });
-
-    return { user, token };
+    const access_token = this.jwtService.sign(
+      { id: user.id, email: user.email, username: user.username }
+    )
+    return { user, access_token };
   }
 
   async findOne(email: string) {
@@ -48,6 +49,22 @@ export class UserService {
       );
     }
     return user;
+  }
+
+  async getProfile(email: string) {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new HttpException(
+        'Немає акаунту з цією адресою',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      avatar: user.avatar,
+    }
   }
 
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<any> {
