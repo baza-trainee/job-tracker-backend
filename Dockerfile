@@ -1,6 +1,6 @@
-FROM node
+FROM node:20-alpine
 
-WORKDIR /src/bazaskill_backend
+WORKDIR /src/job_tracker_backend
 
 COPY package*.json ./
 

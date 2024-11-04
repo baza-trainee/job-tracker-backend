@@ -1,25 +1,33 @@
 version: '3.5'
 
 services:
-  server:
-    build: ./bazaskill-backend
-    container_name: server
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
     restart: always
-    ports:
-      - "4000:4000"
-    networks:
-      - bazaskill
-  client:
-    build: ./bazaskill-frontend
-    container_name: client
-    restart: always
-    ports:
-      - "3000:3000"
-    networks:
-      - bazaskill
     depends_on:
-      - server
-networks:
-  bazaskill:
-    name: bazaskill
+      - postgres
+    environment:
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:${DB_PORT}/${DB_DATABASE}
+      NODE_ENV: development
+      PORT: ${APP_PORT}
+    ports:
+      - ${LOCAL_APP_PORT}:${APP_PORT}
+    container_name: job-tracker-backend
 
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+      - ${LOCAL_DB_PORT}:${DB_PORT}
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    container_name: job-tracker-postgres
+
+volumes:
+  db-data:
