@@ -1,26 +1,27 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  PrimaryColumn,
 } from 'typeorm';
+
 
 @Entity({ name: 'User' })
 export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryColumn()
+  id: string;
 
   @ApiProperty({ description: 'User`s username' })
   @Column()
   username: string;
 
   @ApiProperty({ description: 'User`s email' })
-  @Column()
+  @Column({ unique: true })
   email: string;
 
   @ApiProperty({ description: 'User`s password' })
-  @Column()
+  @Column({ nullable: true })
   password: string;
 
   @ApiProperty({ description: 'User`s avatar' })

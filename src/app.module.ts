@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { join } from 'path';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -19,10 +17,10 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        synchronize: true,
-        logging: false,
         url: configService.get('DATABASE_URL'),
         entities: [__dirname + '/**/*.entity{.js,.ts}'],
+        synchronize: true,
+        logging: false,
       }),
       inject: [ConfigService],
     }),
@@ -45,7 +43,5 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
     PasswordModule,
     MailingModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule { }

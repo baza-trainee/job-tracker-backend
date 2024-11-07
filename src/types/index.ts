@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { User } from '../user/entities/user.entity';
 
 export class IUser {
   @ApiProperty()
@@ -11,6 +12,8 @@ export class IUser {
   avatar?: string;
   @ApiProperty()
   access_token: string;
+  @ApiProperty()
+  refresh_token: string;
 }
 
 export class NotFoundResponse {
@@ -20,3 +23,21 @@ export class NotFoundResponse {
   message: string;
 }
 
+export interface JwtPayload {
+  id: string;
+  email: string;
+  refresh_token: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  access_token: string;
+  refresh_token: string;
+}
+
+export class LogoutResponse {
+  @ApiProperty({ default: 200 })
+  status_code: number;
+  @ApiProperty()
+  message: string;
+}
