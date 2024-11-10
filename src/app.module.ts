@@ -5,10 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { PasswordModule } from './password/password.module';
 import { MailingModule } from './mailing/mailing.module';
 import { MailerModule } from '@nestjs-modules/mailer';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
 
 @Module({
   imports: [
@@ -28,19 +27,40 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
       rootPath: join(__dirname, '..', 'swagger-static'),
       serveRoot: process.env.NODE_ENV === 'development' ? '/' : '/swagger',
     }),
-    MailerModule.forRoot({
-      transport: 'smtps://user@domain.com:pass@smtp.domain.com',
-      template: {
-        dir: process.cwd() + '/templates/',
-        adapter: new HandlebarsAdapter(),
-        options: {
-          strict: true,
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        transport: {
+          host: configService.get<string>('SMTP_HOST'),
+          secure: true,
+          port: configService.get<number>('SMTP_PORT'),
+          auth: {
+            user: configService.get<string>('SMTP_USER'),
+            pass: configService.get<string>('SMTP_PASSWORD'),
+          },
+          debug: configService.get<boolean>('SMTP_DEBUG') || false,
         },
-      },
+        defaults: {
+          from: configService.get<string>('SMTP_FROM'), // Default "from" address
+        },
+        template: {
+          dir: join(process.cwd(), 'templates'), // Points to the templates folder
+          adapter: new EjsAdapter(),
+          options: {
+            strict: true,
+          },
+        },
+        options: {
+          viewEngine: {
+            engine: 'ejs',
+            templates: join(process.cwd(), 'templates'),
+          },
+        },
+      }),
+      inject: [ConfigService],
     }),
     UserModule,
     AuthModule,
-    PasswordModule,
     MailingModule,
   ],
 })

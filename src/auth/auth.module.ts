@@ -10,6 +10,8 @@ import { User } from '../user/entities/user.entity';
 import { GithubStrategy } from './strategies/github-strategy';
 import { GoogleStrategy } from './strategies/google-strategy';
 import { JwtStrategy } from './strategies/jwt-strategy';
+import { MailingService } from 'src/mailing/mailing.service';
+import { MailingModule } from 'src/mailing/mailing.module';
 
 @Module({
   imports: [
@@ -24,8 +26,9 @@ import { JwtStrategy } from './strategies/jwt-strategy';
       }),
       inject: [ConfigService],
     }),
+    MailingModule
   ],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, GithubStrategy],
+  providers: [AuthService, MailingService, JwtStrategy, GoogleStrategy, GithubStrategy],
   controllers: [AuthController],
   exports: [AuthService],
 })
