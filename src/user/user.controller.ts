@@ -7,8 +7,7 @@ import {
   Param,
   Get,
   UseGuards,
-  Request,
-  Req
+  Req,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { ApiBody, ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
