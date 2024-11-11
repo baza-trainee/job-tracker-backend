@@ -32,7 +32,7 @@ export class UserService {
         HttpStatus.NOT_FOUND,
       );
     }
-    return { user }
+    return this.selectFields(user);
   }
 
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<any> {
@@ -57,5 +57,14 @@ export class UserService {
         HttpStatus.NOT_FOUND,
       );
     return this.userRepository.update(email, updateUserDto);
+  }
+
+  private selectFields(user: User) {
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      avatar: user.avatar,
+    };
   }
 }
