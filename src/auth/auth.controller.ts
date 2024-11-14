@@ -93,7 +93,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'GitHub login successful', type: IUser })
   @ApiResponse({ status: 401, description: 'Unauthorized or failed GitHub login' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  async githubAuthRedirect(@Req() req, @Res() res: any) {
+  async githubAuthRedirect(@Req() req: Request, @Res() res: any) {
     try {
       const result = await this.authService.githubLogin(req);
 
@@ -124,7 +124,7 @@ export class AuthController {
 
   @Post('forgot-password')
   @ApiBody({ type: ForgotPasswordDto })
-  @ApiResponse({ status: 200, description: 'Email with link was sent' })
+  @ApiResponse({ status: 200, description: 'Email with link was sent. Check your email' })
   @ApiResponse({ status: 401, description: 'Invalid email' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
