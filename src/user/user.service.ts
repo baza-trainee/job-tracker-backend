@@ -1,8 +1,10 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as argon2 from 'argon2';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
@@ -17,7 +19,7 @@ export class UserService {
     });
     if (!user) {
       throw new HttpException(
-        'Немає акаунту з цією адресою',
+        'No account found with this email address',
         HttpStatus.NOT_FOUND,
       );
     }
@@ -28,7 +30,7 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { email: req.user?.email } });
     if (!user) {
       throw new HttpException(
-        'Немає акаунту з цією адресою',
+        'No account found with this email address',
         HttpStatus.NOT_FOUND,
       );
     }
@@ -37,26 +39,40 @@ export class UserService {
 
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<any> {
     const user = await this.userRepository.findOne({ where: { id } });
-    if (!user)
+    if (!user) {
       throw new HttpException(
-        'Немає акаунту з цією адресою',
+        'No account found with this email address',
         HttpStatus.NOT_FOUND,
       );
+    }
     await this.userRepository.update(id, updateUserDto);
-    return { message: 'user successfully updated' };
+    return { message: 'User successfully updated' };
   }
 
-  async updatePassword(
-    email: string,
-    updateUserDto: UpdateUserDto,
+  async changePassword(
+    req: any,
+    changePasswordDto: ChangePasswordDto
   ): Promise<any> {
-    const user = await this.userRepository.findOne({ where: { email } });
-    if (!user)
+    const user = await this.userRepository.findOne({ where: { email: req.user?.email } });
+
+    if (!user) {
       throw new HttpException(
-        'Немає акаунту з цією адресою',
+        'No account found with this email address',
         HttpStatus.NOT_FOUND,
       );
-    return this.userRepository.update(email, updateUserDto);
+    }
+
+    const isPasswordsMatch = await argon2.verify(user.password, changePasswordDto.previous_password);
+
+    if (!isPasswordsMatch) {
+      throw new UnauthorizedException('Invalid previous password. Please try again.');
+    }
+
+    const newHashedPassword = await argon2.hash(changePasswordDto.new_password);
+
+    await this.userRepository.update(user.id, { password: newHashedPassword });
+
+    return { message: 'Password successfully changed' };
   }
 
   private selectFields(user: User) {

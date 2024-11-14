@@ -5,7 +5,6 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
-import * as ejs from 'ejs';
 
 import { UserService } from '../user/user.service';
 import { User } from '../user/entities/user.entity';
@@ -188,12 +187,4 @@ export class AuthService {
     };
   }
 
-  private selectFields(user: User) {
-    return {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      avatar: user.avatar,
-    };
-  }
 }
