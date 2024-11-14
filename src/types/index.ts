@@ -29,15 +29,21 @@ export interface JwtPayload {
   refresh_token: string;
 }
 
-export interface AuthResponse {
-  user: User;
+export class AuthResponse {
+  @ApiProperty()
   access_token: string;
+  @ApiProperty()
   refresh_token: string;
 }
 
 export class LogoutResponse {
   @ApiProperty({ default: 200 })
   status_code: number;
+  @ApiProperty()
+  message: string;
+}
+
+export class MessageResponse {
   @ApiProperty()
   message: string;
 }

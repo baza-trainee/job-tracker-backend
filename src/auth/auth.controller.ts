@@ -1,7 +1,7 @@
 import { Controller, Post, UseGuards, Req, Body, Get, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { IUser, LogoutResponse } from '../types';
+import { AuthResponse, LogoutResponse, MessageResponse } from '../types';
 import { LoginUserDto } from './dto/login-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Request } from 'express';
@@ -22,7 +22,7 @@ export class AuthController {
 
   @Post('register')
   @ApiBody({ type: CreateUserDto })
-  @ApiResponse({ status: 201, description: 'User created', type: IUser })
+  @ApiResponse({ status: 201, description: 'User created', type: AuthResponse })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   create(@Body() createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
@@ -30,7 +30,7 @@ export class AuthController {
 
   @Post('login')
   @ApiBody({ type: LoginUserDto })
-  @ApiResponse({ status: 200, description: 'User signed in', type: IUser })
+  @ApiResponse({ status: 200, description: 'User signed in', type: AuthResponse })
   @ApiResponse({ status: 401, description: 'Invalid login or password' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async login(@Body() loginUserDto: LoginUserDto) {
@@ -60,7 +60,7 @@ export class AuthController {
 
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
-  @ApiResponse({ status: 200, description: 'Google login successful', type: IUser })
+  @ApiResponse({ status: 200, description: 'Google login successful', type: AuthResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized or failed Google login' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async googleAuthRedirect(@Req() req: Request, @Res() res: any) {
@@ -90,7 +90,7 @@ export class AuthController {
 
   @Get('github/callback')
   @UseGuards(GithubAuthGuard)
-  @ApiResponse({ status: 200, description: 'GitHub login successful', type: IUser })
+  @ApiResponse({ status: 200, description: 'GitHub login successful', type: AuthResponse })
   @ApiResponse({ status: 401, description: 'Unauthorized or failed GitHub login' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   async githubAuthRedirect(@Req() req: Request, @Res() res: any) {
@@ -116,7 +116,7 @@ export class AuthController {
 
   @Post('refresh')
   @ApiBody({ schema: { type: 'object', properties: { refresh_token: { type: 'string' } } } })
-  @ApiResponse({ status: 200, description: 'Tokens refreshed', type: IUser })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed', type: AuthResponse })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshTokens(@Body('refresh_token') refreshToken: string) {
     return this.authService.refreshTokens(refreshToken);
@@ -124,7 +124,7 @@ export class AuthController {
 
   @Post('forgot-password')
   @ApiBody({ type: ForgotPasswordDto })
-  @ApiResponse({ status: 200, description: 'Email with link was sent. Check your email' })
+  @ApiResponse({ status: 200, description: 'Email with link was sent. Check your email', type: MessageResponse })
   @ApiResponse({ status: 401, description: 'Invalid email' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
@@ -132,7 +132,7 @@ export class AuthController {
 
   @Post('reset-password')
   @ApiBody({ type: ResetPasswordDto })
-  @ApiResponse({ status: 200, description: 'Password updated' })
+  @ApiResponse({ status: 200, description: 'Password updated', type: MessageResponse })
   @ApiResponse({ status: 401, description: 'Invalid token' })
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto)
