@@ -9,13 +9,4 @@ export class CreateUserDto {
     @ApiProperty()
     @MinLength(6, { message: 'Password must be minimum 6 symbols' })
     password: string;
-
-    @ApiProperty()
-    @IsString()
-    username: string;
-
-    @ApiProperty()
-    @IsString()
-    @IsOptional()
-    avatar: string | null;
 }

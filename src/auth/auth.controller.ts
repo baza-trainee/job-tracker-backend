@@ -1,7 +1,7 @@
 import { Controller, Post, UseGuards, Req, Body, Get, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthResponse, LogoutResponse, MessageResponse } from '../types';
+import { AuthResponse, LogoutResponse, MessageResponse, RefreshTokenResponse } from '../types';
 import { LoginUserDto } from './dto/login-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Request } from 'express';
@@ -116,7 +116,7 @@ export class AuthController {
 
   @Post('refresh')
   @ApiBody({ schema: { type: 'object', properties: { refresh_token: { type: 'string' } } } })
-  @ApiResponse({ status: 200, description: 'Tokens refreshed', type: AuthResponse })
+  @ApiResponse({ status: 201, description: 'Tokens refreshed', type: RefreshTokenResponse })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshTokens(@Body('refresh_token') refreshToken: string) {
     return this.authService.refreshTokens(refreshToken);

@@ -47,3 +47,8 @@ export class MessageResponse {
   @ApiProperty()
   message: string;
 }
+
+export class RefreshTokenResponse {
+  @ApiProperty()
+  access_token: string;
+}
