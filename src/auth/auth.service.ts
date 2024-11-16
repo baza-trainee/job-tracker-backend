@@ -38,7 +38,6 @@ export class AuthService {
       id: uuidv4(),
       email: createUserDto.email,
       password: await argon2.hash(createUserDto.password),
-      username: createUserDto.username,
     });
 
     return this.generateTokens(user);
@@ -90,7 +89,7 @@ export class AuthService {
       link: resetPasswordUrl,
     });
 
-    return { message: 'Check your email', status: 200, email: user.email }
+    return { message: 'Check your email', status: 200, email: user.email, token }
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
@@ -161,8 +160,8 @@ export class AuthService {
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
-
-      return this.generateTokens(user);
+      const access_token = (await this.generateTokens(user)).access_token
+      return { access_token }
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }

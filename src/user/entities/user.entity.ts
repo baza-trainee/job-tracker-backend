@@ -13,7 +13,7 @@ export class User {
   id: string;
 
   @ApiProperty({ description: 'User`s username' })
-  @Column()
+  @Column({ nullable: true })
   username: string;
 
   @ApiProperty({ description: 'User`s email' })
