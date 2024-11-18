@@ -14,9 +14,11 @@ export class UserService {
   ) { }
 
   async findOne(email: string) {
+
     const user = await this.userRepository.findOne({
       where: { email },
     });
+
     if (!user) {
       throw new HttpException(
         'No account found with this email address',
@@ -27,7 +29,7 @@ export class UserService {
   }
 
   async getProfile(req: any) {
-    const user = await this.userRepository.findOne({ where: { email: req.user?.email } });
+    const user = await this.userRepository.findOne({ where: { email: req?.user?.email } });
     if (!user) {
       throw new HttpException(
         'No account found with this email address',
