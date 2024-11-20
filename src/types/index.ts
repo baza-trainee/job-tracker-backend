@@ -34,6 +34,8 @@ export class AuthResponse {
   access_token: string;
   @ApiProperty()
   refresh_token: string;
+  @ApiProperty()
+  user: IUser;
 }
 
 export class LogoutResponse {

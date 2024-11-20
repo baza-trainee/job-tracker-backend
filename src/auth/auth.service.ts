@@ -183,6 +183,16 @@ export class AuthService {
     return {
       access_token,
       refresh_token,
+      user: this.selectFields(user),
+    };
+  }
+
+  private selectFields(user: User) {
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      avatar: user.avatar,
     };
   }
 
