@@ -26,6 +26,11 @@ export class AuthService {
   ) { }
 
   async register(createUserDto: CreateUserDto) {
+
+    if (!createUserDto.email || !createUserDto.password) {
+      throw new UnauthorizedException('Email and password are required. Please try again');
+    }
+
     const existingUser = await this.userRepository.findOne({
       where: {
         email: createUserDto.email,
@@ -44,6 +49,10 @@ export class AuthService {
   }
 
   async login(loginUserDto: LoginUserDto) {
+    if (!loginUserDto.email || !loginUserDto.password) {
+      throw new UnauthorizedException('Email and password are required. Please try again');
+    }
+
     const user = await this.userService.findOne(loginUserDto.email);
 
     if (!user) {
@@ -68,6 +77,9 @@ export class AuthService {
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+    if (!forgotPasswordDto.email) {
+      throw new UnauthorizedException('Email is required');
+    }
     const user = await this.userService.findOne(forgotPasswordDto.email);
 
     if (!user) {
