@@ -16,6 +16,16 @@ async function bootstrap() {
     .setDescription('Example of Job Tracker API routes')
     .setVersion('1.0')
     .addTag('Job Tracker API')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        name: 'Authorization',
+        description: 'Enter your JWT token',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('/swagger', app, document);

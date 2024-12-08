@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { MailingModule } from './mailing/mailing.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
+import { ProjectsModule } from './projects/projects.module';
+import { VacanciesModule } from './vacancies/vacancies.module';
 
 @Module({
   imports: [
@@ -62,6 +64,8 @@ import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
     UserModule,
     AuthModule,
     MailingModule,
+    ProjectsModule,
+    VacanciesModule,
   ],
 })
 export class AppModule { }
