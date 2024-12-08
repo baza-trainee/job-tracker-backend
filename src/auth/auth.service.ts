@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -26,102 +26,171 @@ export class AuthService {
   ) { }
 
   async register(createUserDto: CreateUserDto) {
-
     if (!createUserDto.email || !createUserDto.password) {
-      throw new UnauthorizedException('Email and password are required. Please try again');
+      throw new BadRequestException('Email and password are required');
     }
 
-    const existingUser = await this.userRepository.findOne({
-      where: {
+    try {
+      const existingUser = await this.userRepository.findOne({
+        where: {
+          email: createUserDto.email,
+        },
+      });
+
+      if (existingUser) {
+        throw new ConflictException('User with this email already exists');
+      }
+
+      const user = await this.userRepository.save({
+        id: uuidv4(),
         email: createUserDto.email,
-      },
-    });
-    if (existingUser) {
-      throw new ConflictException('User with this email already exists');
-    }
-    const user = await this.userRepository.save({
-      id: uuidv4(),
-      email: createUserDto.email,
-      password: await argon2.hash(createUserDto.password),
-    });
+        password: await argon2.hash(createUserDto.password),
+      });
 
-    return this.generateTokens(user);
+      return this.generateTokens(user);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to register user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async login(loginUserDto: LoginUserDto) {
     if (!loginUserDto.email || !loginUserDto.password) {
-      throw new UnauthorizedException('Email and password are required. Please try again');
+      throw new BadRequestException('Email and password are required');
     }
 
-    const user = await this.userService.findOne(loginUserDto.email);
+    try {
+      const user = await this.userService.findOne(loginUserDto.email);
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid login or password. Please try again');
+      if (!user) {
+        throw new UnauthorizedException('Invalid login credentials');
+      }
+
+      const isPasswordsMatch = await argon2.verify(
+        user.password,
+        loginUserDto.password
+      );
+
+      if (!isPasswordsMatch) {
+        throw new UnauthorizedException('Invalid login credentials');
+      }
+
+      return this.generateTokens(user);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to login',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-
-    const isPasswordsMatch = await argon2.verify(user.password, loginUserDto.password);
-
-    if (!isPasswordsMatch) {
-      throw new UnauthorizedException('Invalid login or password. Please try again');
-    }
-
-    return this.generateTokens(user);
   }
 
   async logout(req: any) {
-    req.user = null;
-    req.refresh_token = null;
-    req.access_token = null;
+    if (!req?.user) {
+      throw new UnauthorizedException('User not authenticated');
+    }
 
-    return { message: 'User successfully logged out', status: 200 };
+    try {
+      req.user = null;
+      req.refresh_token = null;
+      req.access_token = null;
+
+      return {
+        message: 'User successfully logged out',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Failed to logout',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
     if (!forgotPasswordDto.email) {
-      throw new UnauthorizedException('Email is required');
-    }
-    const user = await this.userService.findOne(forgotPasswordDto.email);
-
-    if (!user) {
-      throw new UnauthorizedException('User with this email does not exist');
+      throw new BadRequestException('Email is required');
     }
 
-    const token = this.jwtService.sign({ email: user.email }, {
-      secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: '10m',
-    });
+    try {
+      const user = await this.userService.findOne(forgotPasswordDto.email);
 
-    const resetPasswordUrl = this.configService.get<string>('CLIENT_URL') + `/reset-password?verify=${token}`;
+      if (!user) {
+        throw new UnauthorizedException('User with this email does not exist');
+      }
 
-    await this.mailingService.sendMail({
-      email: user.email,
-      name: user.username,
-      subject: 'Password reset',
-      template: 'forgot-password',
-      link: resetPasswordUrl,
-    });
+      const token = this.jwtService.sign(
+        { email: user.email },
+        {
+          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+          expiresIn: '10m',
+        }
+      );
 
-    return { message: 'Check your email', status: 200, email: user.email, token }
+      const resetPasswordUrl = this.configService.get<string>('CLIENT_URL') + `/reset-password?verify=${token}`;
+
+      await this.mailingService.sendMail({
+        email: user.email,
+        name: user.username,
+        subject: 'Password reset',
+        template: 'forgot-password',
+        link: resetPasswordUrl,
+      });
+
+      return {
+        message: 'Password reset instructions have been sent to your email',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to process password reset request',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
-    const decoded = this.jwtService.decode(resetPasswordDto.token);
-
-    if (!decoded) {
-      throw new UnauthorizedException('Invalid token');
+    if (!resetPasswordDto.token || !resetPasswordDto.password) {
+      throw new BadRequestException('Token and new password are required');
     }
 
-    const user = await this.userService.findOne(decoded['email']);
+    try {
+      const decodedToken = this.jwtService.verify(resetPasswordDto.token, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+      });
 
-    if (!user) {
-      throw new UnauthorizedException('User with this email does not exist');
+      const user = await this.userService.findOne(decodedToken.email);
+
+      if (!user) {
+        throw new UnauthorizedException('Invalid or expired reset token');
+      }
+
+      const hashedPassword = await argon2.hash(resetPasswordDto.password);
+      await this.userRepository.update(user.id, { password: hashedPassword });
+
+      return {
+        message: 'Password has been successfully reset',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to reset password',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
-
-    const hashedPassword = await argon2.hash(resetPasswordDto.password);
-
-    await this.userService.updateUser(user.id, { password: hashedPassword });
-
-    return { message: 'Password successfully updated', status: 200 }
   }
 
   async googleLogin(req: any) {
@@ -175,28 +244,36 @@ export class AuthService {
       const access_token = (await this.generateTokens(user)).access_token
       return { access_token }
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to refresh tokens',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
 
   private async generateTokens(user: User) {
-    const payload = { email: user.email, sub: user.id };
+    try {
+      const payload = { email: user.email, sub: user.id };
 
-    const access_token = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-      expiresIn: '1h',
-    });
-
-    const refresh_token = this.jwtService.sign(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-      expiresIn: '7d',
-    });
-
-    return {
-      access_token,
-      refresh_token,
-      user: this.selectFields(user),
-    };
+      return {
+        access_token: this.jwtService.sign(payload, {
+          secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+          expiresIn: '1d',
+        }),
+        refresh_token: this.jwtService.sign(payload, {
+          secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+          expiresIn: '7d',
+        }),
+      };
+    } catch (error) {
+      throw new HttpException(
+        'Failed to generate tokens',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   private selectFields(user: User) {
@@ -207,5 +284,4 @@ export class AuthService {
       avatar: user.avatar,
     };
   }
-
 }
