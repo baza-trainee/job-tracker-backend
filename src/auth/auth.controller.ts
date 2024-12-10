@@ -1,6 +1,6 @@
 import { Controller, Post, UseGuards, Req, Body, Get, Res, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { ApiBody, ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiHeader, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthResponse, LogoutResponse, MessageResponse, RefreshTokenResponse } from '../types';
 import { LoginUserDto } from './dto/login-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -40,12 +40,9 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @ApiHeader({
-    name: 'Authorization',
-    description: 'Bearer access token for authorization',
-    required: true,
-  })
+  @ApiBearerAuth('access-token')
   @ApiResponse({ status: 200, description: 'User signed out', type: LogoutResponse })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   @UseGuards(JwtAuthGuard)
   async logout(@Req() req: Request) {
