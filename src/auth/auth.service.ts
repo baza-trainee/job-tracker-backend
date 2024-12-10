@@ -98,20 +98,46 @@ export class AuthService {
     }
 
     try {
-      req.user = null;
-      req.refresh_token = null;
-      req.access_token = null;
+      const token = this.extractTokenFromHeader(req);
+      if (!token) {
+        throw new UnauthorizedException('No token provided');
+      }
+
+      const user = await this.userRepository.findOne({
+        where: { email: req.user.email }
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Add token to invalidated tokens list
+      const invalidatedTokens = user.invalidatedTokens || [];
+      invalidatedTokens.push(token);
+
+      // Update user with new invalidated token
+      await this.userRepository.update(user.id, {
+        invalidatedTokens
+      });
 
       return {
         message: 'User successfully logged out',
         status: HttpStatus.OK
       };
     } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
       throw new HttpException(
         'Failed to logout',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  private extractTokenFromHeader(request: any): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
@@ -134,6 +160,15 @@ export class AuthService {
         }
       );
 
+      // Save reset token and expiry
+      const expiry = new Date();
+      expiry.setMinutes(expiry.getMinutes() + 10); // 10 minutes from now
+
+      await this.userRepository.update(user.id, {
+        resetToken: token,
+        resetTokenExpiry: expiry
+      });
+
       const resetPasswordUrl = this.configService.get<string>('CLIENT_URL') + `/reset-password?verify=${token}`;
 
       await this.mailingService.sendMail({
@@ -146,7 +181,8 @@ export class AuthService {
 
       return {
         message: 'Password reset instructions have been sent to your email',
-        status: HttpStatus.OK
+        status: HttpStatus.OK,
+        token
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -164,19 +200,51 @@ export class AuthService {
       throw new BadRequestException('Token and new password are required');
     }
 
+    let decodedToken;
     try {
-      const decodedToken = this.jwtService.verify(resetPasswordDto.token, {
+      decodedToken = this.jwtService.verify(resetPasswordDto.token, {
         secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
       });
+    } catch (error) {
+      if (error?.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Reset token has expired');
+      }
+      if (error?.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid reset token');
+      }
+      throw error;
+    }
 
-      const user = await this.userService.findOne(decodedToken.email);
+    try {
+      if (!decodedToken) {
+        throw new UnauthorizedException('Invalid or expired reset token');
+      }
+
+      // Find user and check if token matches and hasn't expired
+      const user = await this.userRepository.findOne({
+        where: {
+          email: decodedToken.email,
+          resetToken: resetPasswordDto.token,
+        }
+      });
 
       if (!user) {
         throw new UnauthorizedException('Invalid or expired reset token');
       }
 
+      // Check if token has expired
+      if (!user.resetTokenExpiry || new Date() > user.resetTokenExpiry) {
+        throw new UnauthorizedException('Reset token has expired');
+      }
+
       const hashedPassword = await argon2.hash(resetPasswordDto.password);
-      await this.userRepository.update(user.id, { password: hashedPassword });
+
+      // Update password and clear reset token
+      await this.userRepository.update(user.id, {
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null
+      });
 
       return {
         message: 'Password has been successfully reset',

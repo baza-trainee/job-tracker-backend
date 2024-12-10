@@ -1,11 +1,11 @@
-import { Controller, Post, UseGuards, Req, Body, Get, Res } from '@nestjs/common';
+import { Controller, Post, UseGuards, Req, Body, Get, Res, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiHeader, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthResponse, LogoutResponse, MessageResponse, RefreshTokenResponse } from '../types';
 import { LoginUserDto } from './dto/login-user.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Request } from 'express';
-import { AuthGuard } from './guards/jwt-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { GithubAuthGuard } from './guards/github-auth.guard';
 import { ConfigService } from '@nestjs/config';
@@ -29,6 +29,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiBody({ type: LoginUserDto })
   @ApiResponse({ status: 200, description: 'User signed in', type: AuthResponse })
   @ApiResponse({ status: 401, description: 'Invalid login or password' })
@@ -38,6 +39,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @HttpCode(HttpStatus.OK)
   @ApiHeader({
     name: 'Authorization',
     description: 'Bearer access token for authorization',
@@ -45,7 +47,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 200, description: 'User signed out', type: LogoutResponse })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  @UseGuards(AuthGuard)
+  @UseGuards(JwtAuthGuard)
   async logout(@Req() req: Request) {
     return this.authService.logout(req);
   }
@@ -138,4 +140,3 @@ export class AuthController {
     return this.authService.resetPassword(resetPasswordDto)
   }
 }
-

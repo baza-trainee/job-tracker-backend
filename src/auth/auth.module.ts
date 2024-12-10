@@ -12,6 +12,7 @@ import { GoogleStrategy } from './strategies/google-strategy';
 import { JwtStrategy } from './strategies/jwt-strategy';
 import { MailingService } from 'src/mailing/mailing.service';
 import { MailingModule } from 'src/mailing/mailing.module';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -28,7 +29,7 @@ import { MailingModule } from 'src/mailing/mailing.module';
     }),
     MailingModule
   ],
-  providers: [AuthService, MailingService, JwtStrategy, GoogleStrategy, GithubStrategy],
+  providers: [AuthService, MailingService, JwtStrategy, GoogleStrategy, GithubStrategy, JwtAuthGuard],
   controllers: [AuthController],
   exports: [AuthService],
 })

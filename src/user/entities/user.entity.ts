@@ -30,6 +30,18 @@ export class User {
   @Column({ nullable: true })
   avatar?: string;
 
+  @ApiProperty({ description: 'User`s reset token' })
+  @Column({ nullable: true })
+  resetToken: string;
+
+  @ApiProperty({ description: 'User`s reset token expiry' })
+  @Column({ nullable: true })
+  resetTokenExpiry: Date;
+
+  @ApiProperty({ description: 'User`s invalidated tokens' })
+  @Column('simple-array', { nullable: true })
+  invalidatedTokens: string[];
+
   @ApiProperty({ type: () => [Vacancy], description: 'User vacancies' })
   @OneToMany(() => Vacancy, (vacancy) => vacancy.user)
   vacancies: Vacancy[];

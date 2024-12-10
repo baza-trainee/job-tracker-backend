@@ -10,7 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { VacanciesService } from './vacancies.service';
 import { CreateVacancyDto } from './dto/create-vacancy.dto';
 import { UpdateVacancyDto } from './dto/update-vacancy.dto';
@@ -18,7 +18,7 @@ import { Vacancy } from './entities/vacancy.entity';
 
 @ApiTags('Vacancies')
 @ApiBearerAuth('access-token')
-@UseGuards(AuthGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('vacancies')
 export class VacanciesController {
   constructor(private readonly vacanciesService: VacanciesService) { }

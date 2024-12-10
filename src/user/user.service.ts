@@ -59,7 +59,10 @@ export class UserService {
         );
       }
 
-      return userProfile;
+      return {
+        user: this.selectFields(userProfile),
+        status: HttpStatus.OK
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -86,7 +89,7 @@ export class UserService {
       }
 
       await this.userRepository.update(id, updateUserDto);
-      return { 
+      return {
         message: 'User successfully updated',
         status: HttpStatus.OK
       };
@@ -102,10 +105,10 @@ export class UserService {
   }
 
   async changePassword(
-    req: any,
+    user: any,
     changePasswordDto: ChangePasswordDto
   ): Promise<any> {
-    if (!req?.user?.email) {
+    if (!user?.email) {
       throw new UnauthorizedException('User authentication required');
     }
 
@@ -114,11 +117,11 @@ export class UserService {
     }
 
     try {
-      const user = await this.userRepository.findOne({ 
-        where: { email: req.user.email } 
+      const foundedUser = await this.userRepository.findOne({
+        where: { email: user?.email }
       });
 
-      if (!user) {
+      if (!foundedUser) {
         throw new HttpException(
           'No account found with this email address',
           HttpStatus.NOT_FOUND,
@@ -126,7 +129,7 @@ export class UserService {
       }
 
       const isPasswordsMatch = await argon2.verify(
-        user.password, 
+        user.password,
         changePasswordDto.previous_password
       );
 
@@ -137,7 +140,7 @@ export class UserService {
       const newHashedPassword = await argon2.hash(changePasswordDto.new_password);
       await this.userRepository.update(user.id, { password: newHashedPassword });
 
-      return { 
+      return {
         message: 'Password successfully changed',
         status: HttpStatus.OK
       };
@@ -159,7 +162,6 @@ export class UserService {
       username: user.username,
       avatar: user.avatar,
       vacancies: user.vacancies,
-      createdAt: user.createdAt,
     };
   }
 }
