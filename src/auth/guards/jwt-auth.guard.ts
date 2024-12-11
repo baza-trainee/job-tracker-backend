@@ -15,6 +15,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     private readonly userRepository: Repository<User>,
   ) {
     super();
+    console.log('JwtAuthGuard initialized:', !!this.userRepository);
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -28,8 +29,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     try {
       // Call parent's canActivate to verify the token
       const canActivate = await super.canActivate(context);
-      
+
       if (!canActivate) {
+        console.error('super.canActivate returned false');
         return false;
       }
 
@@ -37,6 +39,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       const user = await this.userRepository.findOne({
         where: { email: request.user.email }
       });
+
+      console.log(user)
 
       if (user?.invalidatedTokens?.includes(token)) {
         throw new UnauthorizedException('Token has been invalidated');

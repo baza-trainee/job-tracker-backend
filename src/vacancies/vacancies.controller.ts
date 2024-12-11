@@ -1,19 +1,9 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiBody, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ForbiddenException } from '@nestjs/common';
 import { VacanciesService } from './vacancies.service';
 import { CreateVacancyDto } from './dto/create-vacancy.dto';
 import { UpdateVacancyDto } from './dto/update-vacancy.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Vacancy } from './entities/vacancy.entity';
 
 @ApiTags('Vacancies')
@@ -24,23 +14,24 @@ export class VacanciesController {
   constructor(private readonly vacanciesService: VacanciesService) { }
 
   @Post()
-  @ApiBody({ type: CreateVacancyDto })
-  @ApiResponse({ status: 201, description: 'Vacancy created successfully', type: Vacancy })
+  @ApiOperation({ summary: 'Create a new vacancy' })
+  @ApiResponse({ status: 201, description: 'Vacancy successfully created', type: Vacancy })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   create(@Request() req, @Body() createVacancyDto: CreateVacancyDto) {
-    return this.vacanciesService.create(createVacancyDto, req.user.id);
+    return this.vacanciesService.create(req.user.id, createVacancyDto);
   }
 
   @Get()
-  @ApiResponse({ status: 200, description: 'List of all vacancies', type: [Vacancy] })
+  @ApiOperation({ summary: 'Get all vacancies for the current user' })
+  @ApiResponse({ status: 200, description: 'Return all vacancies', type: [Vacancy] })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   findAll(@Request() req) {
-    return this.vacanciesService.findAll(req?.user?.id);
+    return this.vacanciesService.findAll(req.user.id);
   }
 
   @Get(':id')
-  @ApiParam({ name: 'id', description: 'Vacancy ID' })
-  @ApiResponse({ status: 200, description: 'Vacancy found', type: Vacancy })
+  @ApiOperation({ summary: 'Get a vacancy by id' })
+  @ApiResponse({ status: 200, description: 'Return the vacancy', type: Vacancy })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Vacancy not found' })
   findOne(@Request() req, @Param('id') id: string) {
@@ -48,23 +39,20 @@ export class VacanciesController {
   }
 
   @Patch(':id')
-  @ApiParam({ name: 'id', description: 'Vacancy ID' })
-  @ApiBody({ type: UpdateVacancyDto })
-  @ApiResponse({ status: 200, description: 'Vacancy updated successfully', type: Vacancy })
+  @ApiOperation({ summary: 'Update a vacancy' })
+  @ApiResponse({ status: 200, description: 'Vacancy successfully updated', type: Vacancy })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - can only update own vacancies' })
   @ApiResponse({ status: 404, description: 'Vacancy not found' })
-  update(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() updateVacancyDto: UpdateVacancyDto,
-  ) {
-    return this.vacanciesService.update(id, updateVacancyDto, req.user.id);
+  update(@Request() req, @Param('id') id: string, @Body() updateVacancyDto: UpdateVacancyDto) {
+    return this.vacanciesService.update(id, req.user.id, updateVacancyDto);
   }
 
   @Delete(':id')
-  @ApiParam({ name: 'id', description: 'Vacancy ID' })
-  @ApiResponse({ status: 200, description: 'Vacancy deleted successfully' })
+  @ApiOperation({ summary: 'Delete a vacancy' })
+  @ApiResponse({ status: 200, description: 'Vacancy successfully deleted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - can only delete own vacancies' })
   @ApiResponse({ status: 404, description: 'Vacancy not found' })
   remove(@Request() req, @Param('id') id: string) {
     return this.vacanciesService.remove(id, req.user.id);

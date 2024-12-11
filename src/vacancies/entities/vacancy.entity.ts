@@ -1,49 +1,60 @@
-import { ApiProperty } from '@nestjs/swagger';
 import {
   Entity,
   Column,
+  CreateDateColumn,
   PrimaryGeneratedColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
-  CreateDateColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
+import { VacancyStatus } from '../../vacancy-status/entities/vacancy-status.entity';
+
+export enum WorkType {
+  REMOTE = 'remote',
+  OFFICE = 'office',
+  HYBRID = 'hybrid',
+}
 
 @Entity({ name: 'Vacancy' })
 export class Vacancy {
-  @ApiProperty({ description: 'Vacancy ID' })
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ description: 'Vacancy title' })
   @Column()
   vacancy: string;
 
-  @ApiProperty({ description: 'Company name' })
+  @Column()
+  link: string;
+
+  @Column({ nullable: true })
+  communication: string;
+
   @Column()
   company: string;
 
-  @ApiProperty({ description: 'Job location' })
   @Column()
   location: string;
 
-  @ApiProperty({ description: 'Application status' })
-  @Column()
-  status: string;
+  @Column({ type: 'enum', enum: WorkType })
+  work_type: WorkType;
 
-  @ApiProperty({ 
-    description: 'User who created the vacancy',
-    type: () => User
-  })
-  @ManyToOne(() => User, (user) => user.vacancies, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'userId' })
+  @Column({ nullable: true })
+  note: string;
+
+  @Column({ default: false })
+  isArchive: boolean;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn()
   user: User;
 
-  @ApiProperty({ description: 'User ID' })
-  @Column()
-  userId: string;
+  @OneToMany(() => VacancyStatus, (status) => status.vacancy)
+  statuses: VacancyStatus[];
 
-  @ApiProperty({ description: 'Creation date' })
   @CreateDateColumn()
   createdAt: Date;
+
+  @CreateDateColumn()
+  updatedAt: Date;
 }

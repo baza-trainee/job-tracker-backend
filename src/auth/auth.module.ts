@@ -1,23 +1,21 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
 import { UserModule } from '../user/user.module';
-import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthController } from './auth.controller';
+import { JwtStrategy } from './strategies/jwt-strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { MailingModule } from '../mailing/mailing.module';
+import { MailingService } from 'src/mailing/mailing.service';
 import { GithubStrategy } from './strategies/github-strategy';
 import { GoogleStrategy } from './strategies/google-strategy';
-import { JwtStrategy } from './strategies/jwt-strategy';
-import { MailingService } from 'src/mailing/mailing.service';
-import { MailingModule } from 'src/mailing/mailing.module';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
     UserModule,
-    PassportModule,
     TypeOrmModule.forFeature([User]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -29,8 +27,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     }),
     MailingModule
   ],
-  providers: [AuthService, MailingService, JwtStrategy, GoogleStrategy, GithubStrategy, JwtAuthGuard],
   controllers: [AuthController],
-  exports: [AuthService],
+  providers: [AuthService, MailingService, JwtStrategy, GoogleStrategy, GithubStrategy, JwtAuthGuard],
+  exports: [JwtAuthGuard, TypeOrmModule]
 })
 export class AuthModule { }

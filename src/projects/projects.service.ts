@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
   BadRequestException,
   InternalServerErrorException,
-  HttpException
+  HttpException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
@@ -34,7 +34,7 @@ export class ProjectsService {
 
       return {
         message: 'Project created successfully',
-        project: savedProject
+        project: this.sanitizeProject(savedProject)
       };
     } catch (error) {
       if (error.code === '23505') { // Unique constraint violation
@@ -57,7 +57,7 @@ export class ProjectsService {
 
       return {
         message: 'Projects retrieved successfully',
-        projects,
+        projects: projects.map(project => this.sanitizeProject(project)),
         count: projects.length
       };
     } catch (error) {
@@ -85,7 +85,7 @@ export class ProjectsService {
 
       return {
         message: 'Project retrieved successfully',
-        project
+        project: this.sanitizeProject(project)
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -139,14 +139,13 @@ export class ProjectsService {
         throw new BadRequestException('Invalid live project URL');
       }
 
-      const updatedProject = await this.projectRepository.save({
-        ...project.project,
-        ...updateProjectDto,
+      await this.projectRepository.update(id, updateProjectDto);
+      const updatedProject = await this.projectRepository.findOne({
+        where: { id },
       });
-
       return {
         message: 'Project updated successfully',
-        project: updatedProject
+        project: this.sanitizeProject(updatedProject)
       };
     } catch (error) {
       if (error instanceof HttpException) {
@@ -166,14 +165,19 @@ export class ProjectsService {
     }
 
     try {
-      const project = await this.findOne(id, userId);
+      const project = await this.projectRepository.findOne({
+        where: { id, userId },
+      });
 
-      if (project.project.userId !== userId) {
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+
+      if (project.userId !== userId) {
         throw new UnauthorizedException('You can only delete your own projects');
       }
 
-      await this.projectRepository.remove(project.project);
-
+      await this.projectRepository.remove(project);
       return {
         message: 'Project deleted successfully',
         id
@@ -184,6 +188,11 @@ export class ProjectsService {
       }
       throw new InternalServerErrorException('Failed to delete project');
     }
+  }
+
+  private sanitizeProject(project: Project) {
+    const { user, ...sanitizedProject } = project;
+    return sanitizedProject;
   }
 }
 
