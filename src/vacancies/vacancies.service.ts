@@ -1,160 +1,148 @@
-import { HttpException, HttpStatus, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { CreateVacancyDto } from './dto/create-vacancy.dto';
 import { UpdateVacancyDto } from './dto/update-vacancy.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Vacancy } from './entities/vacancy.entity';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class VacanciesService {
   constructor(
     @InjectRepository(Vacancy)
-    private vacanciesRepository: Repository<Vacancy>,
+    private readonly vacancyRepository: Repository<Vacancy>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) { }
 
-  async create(createVacancyDto: CreateVacancyDto, userId: string) {
-    if (!userId) {
-      throw new UnauthorizedException('User authentication required');
-    }
+  private sanitizeVacancy(vacancy: Vacancy) {
+    const { user, ...vacancyWithoutUser } = vacancy;
+    return vacancyWithoutUser;
+  }
 
+  async create(userId: string, createVacancyDto: CreateVacancyDto) {
     try {
-      const vacancy = this.vacanciesRepository.create({
+      const user = await this.userRepository.findOneBy({ id: userId });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      const vacancy = this.vacancyRepository.create({
         ...createVacancyDto,
-        userId,
+        user
       });
-      const savedVacancy = await this.vacanciesRepository.save(vacancy);
-      return {
-        message: 'Vacancy successfully created',
-        vacancy: savedVacancy,
-      };
+      
+      const savedVacancy = await this.vacancyRepository.save(vacancy);
+      return this.sanitizeVacancy(savedVacancy);
     } catch (error) {
-      throw new HttpException(
-        'Failed to create vacancy',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error('Failed to create vacancy');
     }
   }
 
-  async findAll(userId?: string) {
+  async findAll(userId: string) {
     try {
-      if (userId) {
-        return await this.vacanciesRepository.find({
-          where: { userId },
-          order: { createdAt: 'DESC' },
-        });
-      }
-      return await this.vacanciesRepository.find({
-        order: { createdAt: 'DESC' },
+      const vacancies = await this.vacancyRepository.find({
+        where: { user: { id: userId } },
+        select: {
+          id: true,
+          vacancy: true,
+          link: true,
+          communication: true,
+          company: true,
+          location: true,
+          work_type: true,
+          note: true,
+          isArchive: true,
+          createdAt: true,
+          updatedAt: true
+        }
       });
+      return vacancies;
     } catch (error) {
-      throw new HttpException(
-        'Failed to fetch vacancies',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error('Failed to fetch vacancies');
     }
   }
 
-  async findOne(id: string, userId?: string) {
-    if (!id) {
-      throw new HttpException(
-        'Vacancy ID is required',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
+  async findOne(id: string, userId: string) {
     try {
-      const query = this.vacanciesRepository.createQueryBuilder('vacancy')
-        .where('vacancy.id = :id', { id });
-
-      if (userId) {
-        query.andWhere('vacancy.userId = :userId', { userId });
-      }
-
-      const vacancy = await query.getOne();
+      const vacancy = await this.vacancyRepository.findOne({
+        where: { id, user: { id: userId } },
+        select: {
+          id: true,
+          vacancy: true,
+          link: true,
+          communication: true,
+          company: true,
+          location: true,
+          work_type: true,
+          note: true,
+          isArchive: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      });
 
       if (!vacancy) {
-        throw new NotFoundException(`Vacancy with ID ${id} not found`);
-      }
-
-      if (userId && vacancy.userId !== userId) {
-        throw new UnauthorizedException('You do not have permission to access this vacancy');
+        throw new NotFoundException('Vacancy not found');
       }
 
       return vacancy;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
+      if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new HttpException(
-        'Failed to fetch vacancy',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error('Failed to fetch vacancy');
     }
   }
 
-  async update(id: string, updateVacancyDto: UpdateVacancyDto, userId: string) {
-    if (!userId) {
-      throw new UnauthorizedException('User authentication required');
-    }
-
+  async update(id: string, userId: string, updateVacancyDto: UpdateVacancyDto) {
     try {
-      const vacancy = await this.findOne(id, userId);
+      const vacancy = await this.vacancyRepository.findOne({
+        where: { id },
+        relations: ['user']
+      });
 
       if (!vacancy) {
-        throw new NotFoundException(`Vacancy with ID ${id} not found`);
+        throw new NotFoundException('Vacancy not found');
       }
 
-      if (vacancy.userId !== userId) {
-        throw new UnauthorizedException('You do not have permission to update this vacancy');
+      if (vacancy.user.id !== userId) {
+        throw new ForbiddenException('You can only update your own vacancies');
       }
 
       Object.assign(vacancy, updateVacancyDto);
-      const updatedVacancy = await this.vacanciesRepository.save(vacancy);
-
-      return {
-        message: 'Vacancy successfully updated',
-        vacancy: updatedVacancy,
-      };
+      const updatedVacancy = await this.vacancyRepository.save(vacancy);
+      return this.sanitizeVacancy(updatedVacancy);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
         throw error;
       }
-      throw new HttpException(
-        'Failed to update vacancy',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error('Failed to update vacancy');
     }
   }
 
   async remove(id: string, userId: string) {
-    if (!userId) {
-      throw new UnauthorizedException('User authentication required');
-    }
-
     try {
-      const vacancy = await this.findOne(id, userId);
+      const vacancy = await this.vacancyRepository.findOne({
+        where: { id },
+        relations: ['user']
+      });
 
       if (!vacancy) {
-        throw new NotFoundException(`Vacancy with ID ${id} not found`);
+        throw new NotFoundException('Vacancy not found');
       }
 
-      if (vacancy.userId !== userId) {
-        throw new UnauthorizedException('You do not have permission to delete this vacancy');
+      if (vacancy.user.id !== userId) {
+        throw new ForbiddenException('You can only delete your own vacancies');
       }
 
-      await this.vacanciesRepository.remove(vacancy);
-      return {
-        message: 'Vacancy successfully deleted',
-        status: HttpStatus.OK
-      };
+      await this.vacancyRepository.remove(vacancy);
+      return { message: 'Vacancy successfully deleted' };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
         throw error;
       }
-      throw new HttpException(
-        'Failed to delete vacancy',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new Error('Failed to delete vacancy');
     }
   }
 }
