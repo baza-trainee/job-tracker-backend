@@ -5,7 +5,7 @@ import { StatusName, RejectReason } from '../../vacancy-status/entities/vacancy-
 export class UpdateVacancyStatusDto {
   @ApiProperty({
     enum: StatusName,
-    description: 'Status name',
+    description: 'Status name. Special rules apply for REJECT and RESUME statuses',
     example: StatusName.HR
   })
   @IsEnum(StatusName)
@@ -13,7 +13,7 @@ export class UpdateVacancyStatusDto {
 
   @ApiProperty({
     enum: RejectReason,
-    description: 'Reason for rejection (required only when status is "reject")',
+    description: 'Reason for rejection. Required and only allowed when status is "REJECT"',
     required: false,
     example: RejectReason.SOFT_SKILLS
   })
@@ -22,12 +22,11 @@ export class UpdateVacancyStatusDto {
   rejectReason?: RejectReason;
 
   @ApiProperty({
-    description: 'Link to resume (required only when status is "resume")',
+    description: 'URL to the resume. Required and only allowed when status is "RESUME"',
     required: false,
-    example: 'https://drive.google.com/file/resume123'
+    example: 'https://example.com/my-resume.pdf'
   })
-  @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
-  @IsString()
+  @IsUrl()
   @IsOptional()
   resume?: string;
 

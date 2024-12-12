@@ -143,12 +143,27 @@ export class VacanciesService {
       }
 
       // Validate status data based on status name
-      if (updateStatusDto.name === StatusName.REJECT && !updateStatusDto.rejectReason) {
-        throw new BadRequestException('Reject reason is required for reject status');
+      if (updateStatusDto.name === StatusName.REJECT) {
+        if (!updateStatusDto.rejectReason) {
+          throw new BadRequestException('Reject reason is required for reject status');
+        }
+      } else {
+        // If status is not REJECT, make sure rejectReason is not provided
+        if (updateStatusDto.rejectReason) {
+          throw new BadRequestException('Reject reason can only be provided for reject status');
+        }
       }
 
-      if (updateStatusDto.name === StatusName.RESUME && !updateStatusDto.resume) {
-        throw new BadRequestException('Resume link is required for resume status');
+      // Validate resume for RESUME status
+      if (updateStatusDto.name === StatusName.RESUME) {
+        if (!updateStatusDto.resume) {
+          throw new BadRequestException('Resume link is required for resume status');
+        }
+      } else {
+        // If status is not RESUME, make sure resume is not provided
+        if (updateStatusDto.resume) {
+          throw new BadRequestException('Resume can only be provided for resume status');
+        }
       }
 
       // Create new status
@@ -191,12 +206,27 @@ export class VacanciesService {
       }
 
       // Validate status data based on status name
-      if (updateStatusDto.name === StatusName.REJECT && !updateStatusDto.rejectReason) {
-        throw new BadRequestException('Reject reason is required for reject status');
+      if (updateStatusDto.name === StatusName.REJECT) {
+        if (!updateStatusDto.rejectReason) {
+          throw new BadRequestException('Reject reason is required for reject status');
+        }
+      } else {
+        // If status is not REJECT, make sure rejectReason is not provided
+        if (updateStatusDto.rejectReason) {
+          throw new BadRequestException('Reject reason can only be provided for reject status');
+        }
       }
 
-      if (updateStatusDto.name === StatusName.RESUME && !updateStatusDto.resume) {
-        throw new BadRequestException('Resume link is required for resume status');
+      // Validate resume for RESUME status
+      if (updateStatusDto.name === StatusName.RESUME) {
+        if (!updateStatusDto.resume) {
+          throw new BadRequestException('Resume link is required for resume status');
+        }
+      } else {
+        // If status is not RESUME, make sure resume is not provided
+        if (updateStatusDto.resume) {
+          throw new BadRequestException('Resume can only be provided for resume status');
+        }
       }
 
       // Update the status
