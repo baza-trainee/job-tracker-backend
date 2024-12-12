@@ -3,15 +3,14 @@ import {
   Entity,
   Column,
   CreateDateColumn,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   OneToMany,
 } from 'typeorm';
 import { Vacancy } from '../../vacancies/entities/vacancy.entity';
-import { Project } from '../../projects/entities/project.entity';
 
 @Entity({ name: 'User' })
 export class User {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   id: string;
 
   @ApiProperty({ description: 'User`s username' })
@@ -25,10 +24,6 @@ export class User {
   @ApiProperty({ description: 'User`s password' })
   @Column({ nullable: true })
   password: string;
-
-  @ApiProperty({ description: 'User`s avatar' })
-  @Column({ nullable: true })
-  avatar?: string;
 
   @ApiProperty({ description: 'User`s reset token' })
   @Column({ nullable: true })
@@ -45,10 +40,6 @@ export class User {
   @ApiProperty({ type: () => [Vacancy], description: 'User vacancies' })
   @OneToMany(() => Vacancy, (vacancy) => vacancy.user)
   vacancies: Vacancy[];
-
-  @ApiProperty({ type: () => [Project], description: 'User projects' })
-  @OneToMany(() => Project, (project) => project.user)
-  projects: Project[];
 
   @CreateDateColumn()
   createdAt: Date;
