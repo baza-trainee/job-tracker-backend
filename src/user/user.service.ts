@@ -60,7 +60,6 @@ export class UserService {
           'user.id',
           'user.email',
           'user.username',
-          'user.avatar',
           'user.createdAt',
           'vacancies.id',
           'vacancies.vacancy',
@@ -179,15 +178,5 @@ export class UserService {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
-
-  private selectFields(user: User) {
-    return {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      avatar: user.avatar,
-      vacancies: user.vacancies,
-    };
   }
 }
