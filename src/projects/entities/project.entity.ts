@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'Projects' })
+
 export class Project {
   @ApiProperty({ description: 'Project ID' })
   @PrimaryGeneratedColumn('uuid')
