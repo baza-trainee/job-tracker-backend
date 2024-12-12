@@ -6,6 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Vacancy } from '../../vacancies/entities/vacancy.entity';
 
 export enum StatusName {
@@ -50,13 +51,11 @@ export class VacancyStatus {
   })
   rejectReason?: RejectReason;
 
-  @Column('jsonb', { nullable: true })
-  resume?: {
-    content: string;
-    version: string;
-  };
+  @Column({ nullable: true })
+  resume?: string;
 
-  @ManyToOne(() => Vacancy, (vacancy) => vacancy.statuses, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Vacancy, (vacancy) => vacancy.statuses, { onDelete: 'CASCADE', eager: false })
   @JoinColumn()
+  @Exclude()
   vacancy: Vacancy;
 }

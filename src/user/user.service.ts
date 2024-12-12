@@ -47,10 +47,39 @@ export class UserService {
     }
 
     try {
-      const userProfile = await this.userRepository.findOne({
-        where: { email: user.email },
-        relations: ['vacancies'],
-      });
+      const userProfile = await this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.vacancies', 'vacancies')
+        .leftJoinAndSelect('vacancies.statuses', 'statuses')
+        .where('user.email = :email', { email: user.email })
+        .orderBy({
+          'vacancies.createdAt': 'DESC',
+          'statuses.date': 'DESC'
+        })
+        .select([
+          'user.id',
+          'user.email',
+          'user.username',
+          'user.avatar',
+          'user.createdAt',
+          'vacancies.id',
+          'vacancies.vacancy',
+          'vacancies.link',
+          'vacancies.communication',
+          'vacancies.company',
+          'vacancies.location',
+          'vacancies.work_type',
+          'vacancies.note',
+          'vacancies.isArchive',
+          'vacancies.createdAt',
+          'vacancies.updatedAt',
+          'statuses.id',
+          'statuses.name',
+          'statuses.date',
+          'statuses.rejectReason',
+          'statuses.resume'
+        ])
+        .getOne();
 
       if (!userProfile) {
         throw new HttpException(
@@ -59,10 +88,7 @@ export class UserService {
         );
       }
 
-      return {
-        user: this.selectFields(userProfile),
-        status: HttpStatus.OK
-      };
+      return userProfile;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;

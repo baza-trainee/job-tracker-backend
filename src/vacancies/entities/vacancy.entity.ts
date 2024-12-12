@@ -16,7 +16,7 @@ export enum WorkType {
   HYBRID = 'hybrid',
 }
 
-@Entity({ name: 'Vacancy' })
+@Entity({ name: 'Vacancies' })
 export class Vacancy {
   @PrimaryGeneratedColumn('uuid')
   id: string;

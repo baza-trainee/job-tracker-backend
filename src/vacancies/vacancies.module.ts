@@ -5,13 +5,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Vacancy } from './entities/vacancy.entity';
 import { User } from '../user/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
+import { VacancyStatusModule } from '../vacancy-status/vacancy-status.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Vacancy, User]),
-    AuthModule
+    AuthModule,
+    VacancyStatusModule,
   ],
   controllers: [VacanciesController],
   providers: [VacanciesService],
+  exports: [VacanciesService],
 })
-export class VacanciesModule { }
+export class VacanciesModule {}
