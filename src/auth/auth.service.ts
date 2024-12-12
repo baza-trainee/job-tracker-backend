@@ -166,7 +166,7 @@ export class AuthService {
 
       await this.userRepository.update(user.id, {
         resetToken: token,
-        resetTokenExpiry: expiry
+        resetTokenExpiry: expiry,
       });
 
       const resetPasswordUrl = this.configService.get<string>('CLIENT_URL') + `/reset-password?verify=${token}`;
@@ -344,12 +344,4 @@ export class AuthService {
     }
   }
 
-  private selectFields(user: User) {
-    return {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      avatar: user.avatar,
-    };
-  }
 }
