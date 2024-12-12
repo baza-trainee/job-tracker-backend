@@ -53,43 +53,61 @@ export class VacanciesController {
     return this.vacanciesService.update(id, req.user.id, updateVacancyDto);
   }
 
-  @Post('status/:id')
-  @ApiOperation({ summary: 'Add new vacancy status' })
+  @Post('status/:vacancyId')
+  @ApiOperation({ 
+    summary: 'Add new vacancy status',
+    description: `
+    Adds a new status to the vacancy. Special validation rules apply:
+    
+    - For REJECT status: rejectReason is required and can only be used with this status
+    - For RESUME status: resume link is required and can only be used with this status
+    - Other statuses should not include rejectReason or resume
+    `
+  })
   @ApiResponse({ status: 201, type: Vacancy, description: 'Status successfully added' })
-  @ApiResponse({ status: 400, description: 'Invalid status data provided' })
+  @ApiResponse({ status: 400, description: 'Invalid status data provided. Common cases: Missing rejectReason for REJECT status, missing resume for RESUME status, or providing these fields with wrong status type' })
   @ApiResponse({ status: 404, description: 'Vacancy not found' })
-  @ApiParam({ name: 'id', description: 'Vacancy ID' })
+  @ApiParam({ name: 'vacancyId', description: 'Vacancy ID' })
   addStatus(
-    @Param('id') id: string,
+    @Param('vacancyId') id: string,
     @Request() req,
     @Body() updateStatusDto: UpdateVacancyStatusDto,
   ) {
     return this.vacanciesService.addStatus(id, req.user.id, updateStatusDto);
   }
 
-  @Patch('status/:id')
-  @ApiOperation({ summary: 'Update existing vacancy status' })
+  @Patch('status/:vacancyId')
+  @ApiOperation({ 
+    summary: 'Update existing vacancy status',
+    description: `
+    Updates an existing vacancy status. Special validation rules apply:
+    
+    - For REJECT status: rejectReason is required and can only be used with this status
+    - For RESUME status: resume link is required and can only be used with this status
+    - Other statuses should not include rejectReason or resume
+    `
+  })
   @ApiResponse({ status: 200, type: Vacancy, description: 'Status successfully updated' })
-  @ApiResponse({ status: 400, description: 'Invalid status data or statusId not provided' })
+  @ApiResponse({ status: 400, description: 'Invalid status data provided. Common cases: Missing rejectReason for REJECT status, missing resume for RESUME status, or providing these fields with wrong status type' })
   @ApiResponse({ status: 404, description: 'Vacancy or status not found' })
-  @ApiParam({ name: 'id', description: 'Vacancy ID' })
+  @ApiParam({ name: 'vacancyId', description: 'Vacancy ID' })
   updateStatus(
-    @Param('id') id: string,
+    @Param('vacancyId') id: string,
     @Request() req,
     @Body() updateStatusDto: UpdateVacancyStatusDto,
   ) {
     return this.vacanciesService.updateStatus(id, req.user.id, updateStatusDto);
   }
 
-  @Delete('status/:id/:statusId')
+  @Delete('status/:vacancyId/:statusId')
   @ApiOperation({ summary: 'Delete vacancy status' })
   @ApiResponse({ status: 200, description: 'Status successfully removed' })
   @ApiResponse({ status: 400, description: 'Cannot delete the initial saved status' })
   @ApiResponse({ status: 404, description: 'Vacancy or status not found' })
-  @ApiParam({ name: 'id', description: 'Vacancy ID' })
+  @ApiParam({ name: 'vacancyId', description: 'Vacancy ID' })
   @ApiParam({ name: 'statusId', description: 'Status ID to delete' })
   deleteStatus(
-    @Param('id') id: string,
+    @Param('vacancyId') id: string,
     @Param('statusId') statusId: string,
     @Request() req,
   ) {
