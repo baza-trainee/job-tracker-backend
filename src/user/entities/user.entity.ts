@@ -3,25 +3,24 @@ import {
   Entity,
   Column,
   CreateDateColumn,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   OneToMany,
 } from 'typeorm';
 import { Vacancy } from '../../vacancies/entities/vacancy.entity';
 
 @Entity({ name: 'User' })
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id: string;
 
   @ApiProperty({ description: 'User`s username' })
-  @Column({ nullable: true })
+  @Column()
   username: string;
 
   @ApiProperty({ description: 'User`s email' })
   @Column({ unique: true })
   email: string;
 
-  @ApiProperty({ description: 'User`s password' })
   @Column({ nullable: true })
   password: string;
 
@@ -36,6 +35,10 @@ export class User {
   @ApiProperty({ description: 'User`s invalidated tokens' })
   @Column('simple-array', { nullable: true })
   invalidatedTokens: string[];
+
+  @ApiProperty({ description: 'User`s google id' })
+  @Column({ nullable: true })
+  googleId: string;
 
   @ApiProperty({ type: () => [Vacancy], description: 'User vacancies' })
   @OneToMany(() => Vacancy, (vacancy) => vacancy.user)
