@@ -9,7 +9,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-@Entity()
+@Entity({ name: 'Projects' })
 export class Project {
   @ApiProperty({ description: 'Project ID' })
   @PrimaryGeneratedColumn('uuid')

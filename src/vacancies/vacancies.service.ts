@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { CreateVacancyDto } from './dto/create-vacancy.dto';
 import { UpdateVacancyDto } from './dto/update-vacancy.dto';
+import { UpdateVacancyStatusDto } from './dto/update-vacancy-status.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vacancy } from './entities/vacancy.entity';
 import { User } from '../user/entities/user.entity';
+import { VacancyStatusService } from '../vacancy-status/vacancy-status.service';
+import { StatusName } from '../vacancy-status/entities/vacancy-status.entity';
 
 @Injectable()
 export class VacanciesService {
@@ -13,6 +16,7 @@ export class VacanciesService {
     private readonly vacancyRepository: Repository<Vacancy>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly vacancyStatusService: VacancyStatusService,
   ) { }
 
   private sanitizeVacancy(vacancy: Vacancy) {
@@ -31,8 +35,12 @@ export class VacanciesService {
         ...createVacancyDto,
         user
       });
-      
+
       const savedVacancy = await this.vacancyRepository.save(vacancy);
+
+      // Create default "saved" status
+      await this.vacancyStatusService.createInitialStatus(savedVacancy);
+
       return this.sanitizeVacancy(savedVacancy);
     } catch (error) {
       throw new Error('Failed to create vacancy');
@@ -43,6 +51,7 @@ export class VacanciesService {
     try {
       const vacancies = await this.vacancyRepository.find({
         where: { user: { id: userId } },
+        relations: ['statuses'],
         select: {
           id: true,
           vacancy: true,
@@ -67,6 +76,7 @@ export class VacanciesService {
     try {
       const vacancy = await this.vacancyRepository.findOne({
         where: { id, user: { id: userId } },
+        relations: ['statuses'],
         select: {
           id: true,
           vacancy: true,
@@ -118,6 +128,126 @@ export class VacanciesService {
         throw error;
       }
       throw new Error('Failed to update vacancy');
+    }
+  }
+
+  async addStatus(id: string, userId: string, updateStatusDto: UpdateVacancyStatusDto) {
+    try {
+      const vacancy = await this.vacancyRepository.findOne({
+        where: { id, user: { id: userId } },
+        relations: ['statuses'],
+      });
+
+      if (!vacancy) {
+        throw new NotFoundException('Vacancy not found');
+      }
+
+      // Validate status data based on status name
+      if (updateStatusDto.name === StatusName.REJECT && !updateStatusDto.rejectReason) {
+        throw new BadRequestException('Reject reason is required for reject status');
+      }
+
+      if (updateStatusDto.name === StatusName.RESUME && !updateStatusDto.resume) {
+        throw new BadRequestException('Resume link is required for resume status');
+      }
+
+      // Create new status
+      await this.vacancyStatusService.createStatus(vacancy, updateStatusDto);
+
+      // Fetch updated vacancy with all statuses
+      const updatedVacancy = await this.vacancyRepository.findOne({
+        where: { id },
+        relations: ['statuses'],
+      });
+
+      return updatedVacancy;
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error('Failed to add vacancy status');
+    }
+  }
+
+  async updateStatus(id: string, userId: string, updateStatusDto: UpdateVacancyStatusDto) {
+    try {
+      const vacancy = await this.vacancyRepository.findOne({
+        where: { id, user: { id: userId } },
+        relations: ['statuses'],
+      });
+
+      if (!vacancy) {
+        throw new NotFoundException('Vacancy not found');
+      }
+
+      if (!updateStatusDto.statusId) {
+        throw new BadRequestException('Status ID is required for updating');
+      }
+
+      // Find the specific status to update
+      const statusToUpdate = vacancy.statuses.find(s => s.id === updateStatusDto.statusId);
+      if (!statusToUpdate) {
+        throw new NotFoundException('Status not found');
+      }
+
+      // Validate status data based on status name
+      if (updateStatusDto.name === StatusName.REJECT && !updateStatusDto.rejectReason) {
+        throw new BadRequestException('Reject reason is required for reject status');
+      }
+
+      if (updateStatusDto.name === StatusName.RESUME && !updateStatusDto.resume) {
+        throw new BadRequestException('Resume link is required for resume status');
+      }
+
+      // Update the status
+      await this.vacancyStatusService.updateStatus(statusToUpdate.id, updateStatusDto);
+
+      // Fetch updated vacancy with all statuses
+      const updatedVacancy = await this.vacancyRepository.findOne({
+        where: { id },
+        relations: ['statuses'],
+      });
+
+      return updatedVacancy;
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error('Failed to update vacancy status');
+    }
+  }
+
+  async deleteStatus(id: string, statusId: string, userId: string): Promise<{ message: string }> {
+    try {
+      const vacancy = await this.vacancyRepository.findOne({
+        where: { id, user: { id: userId } },
+        relations: ['statuses'],
+      });
+
+      if (!vacancy) {
+        throw new NotFoundException('Vacancy not found');
+      }
+
+      // Find the status to delete
+      const statusToDelete = vacancy.statuses.find(s => s.id === statusId);
+      if (!statusToDelete) {
+        throw new NotFoundException('Status not found');
+      }
+
+      // Prevent deletion of the initial "saved" status
+      if (statusToDelete.name === StatusName.SAVED && vacancy.statuses.length === 1) {
+        throw new BadRequestException('Cannot delete the initial saved status');
+      }
+
+      // Delete the status
+      await this.vacancyStatusService.deleteStatus(statusId);
+      
+      return { message: 'Status successfully removed' };
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new Error('Failed to delete vacancy status');
     }
   }
 

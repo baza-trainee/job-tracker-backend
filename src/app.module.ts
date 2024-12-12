@@ -10,6 +10,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
 import { ProjectsModule } from './projects/projects.module';
 import { VacanciesModule } from './vacancies/vacancies.module';
+import { VacancyStatusModule } from './vacancy-status/vacancy-status.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { VacanciesModule } from './vacancies/vacancies.module';
     MailingModule,
     ProjectsModule,
     VacanciesModule,
+    VacancyStatusModule,
   ],
 })
 export class AppModule { }

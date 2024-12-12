@@ -40,8 +40,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         where: { email: request.user.email }
       });
 
-      console.log(user)
-
       if (user?.invalidatedTokens?.includes(token)) {
         throw new UnauthorizedException('Token has been invalidated');
       }
