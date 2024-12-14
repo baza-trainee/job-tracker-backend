@@ -12,6 +12,7 @@ import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 import { Project } from '../../projects/entities/project.entity';
 import { Note } from '../../notes/entities/note.entity';
 import { Event } from '../../events/entities/event.entity';
+import { Prediction } from '../../predictions/entities/prediction.entity';
 
 @Entity({ name: 'User' })
 export class User {
@@ -65,6 +66,9 @@ export class User {
   @ApiProperty({ type: () => [Event], description: 'User events' })
   @OneToMany(() => Event, (event) => event.user)
   events: Event[];
+
+  @OneToMany(() => Prediction, (prediction) => prediction.user)
+  predictions: Prediction[];
 
   @CreateDateColumn()
   createdAt: Date;
