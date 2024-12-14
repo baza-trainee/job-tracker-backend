@@ -7,6 +7,9 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Vacancy } from '../../vacancies/entities/vacancy.entity';
+import { Resume } from '../../resume/entities/resume.entity';
+import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
+import { Project } from '../../projects/entities/project.entity';
 
 @Entity({ name: 'User' })
 export class User {
@@ -43,6 +46,15 @@ export class User {
   @ApiProperty({ type: () => [Vacancy], description: 'User vacancies' })
   @OneToMany(() => Vacancy, (vacancy) => vacancy.user)
   vacancies: Vacancy[];
+
+  @OneToMany(() => Resume, (resume) => resume.user)
+  resumes: Resume[];
+
+  @OneToMany(() => CoverLetter, (coverLetter) => coverLetter.user)
+  coverLetters: CoverLetter[];
+
+  @OneToMany(() => Project, (project) => project.user)
+  projects: Project[];
 
   @CreateDateColumn()
   createdAt: Date;

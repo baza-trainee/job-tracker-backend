@@ -8,6 +8,57 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UserService {
+  private readonly selectFields = {
+    user: [
+      'user.id',
+      'user.email',
+      'user.username',
+      'user.createdAt',
+    ],
+    vacancy: [
+      'vacancies.id',
+      'vacancies.vacancy',
+      'vacancies.link',
+      'vacancies.communication',
+      'vacancies.company',
+      'vacancies.location',
+      'vacancies.work_type',
+      'vacancies.note',
+      'vacancies.isArchive',
+      'vacancies.createdAt',
+      'vacancies.updatedAt',
+    ],
+    status: [
+      'statuses.id',
+      'statuses.name',
+      'statuses.date',
+      'statuses.rejectReason',
+      'statuses.resumeId',
+    ],
+    resume: [
+      'resumes.id',
+      'resumes.name',
+      'resumes.link',
+      'resumes.createdAt',
+      'resumes.updatedAt',
+    ],
+    coverLetter: [
+      'coverLetters.id',
+      'coverLetters.name',
+      'coverLetters.text',
+      'coverLetters.createdAt',
+      'coverLetters.updatedAt',
+    ],
+    project: [
+      'projects.id',
+      'projects.name',
+      'projects.githubLink',
+      'projects.liveProjectLink',
+      'projects.createdAt',
+      'projects.updatedAt',
+    ],
+  };
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -51,32 +102,24 @@ export class UserService {
         .createQueryBuilder('user')
         .leftJoinAndSelect('user.vacancies', 'vacancies')
         .leftJoinAndSelect('vacancies.statuses', 'statuses')
+        .leftJoinAndSelect('user.resumes', 'resumes')
+        .leftJoinAndSelect('user.coverLetters', 'coverLetters')
+        .leftJoinAndSelect('user.projects', 'projects')
         .where('user.email = :email', { email: user.email })
         .orderBy({
           'vacancies.createdAt': 'DESC',
-          'statuses.date': 'DESC'
+          'statuses.date': 'DESC',
+          'resumes.createdAt': 'DESC',
+          'coverLetters.createdAt': 'DESC',
+          'projects.createdAt': 'DESC'
         })
         .select([
-          'user.id',
-          'user.email',
-          'user.username',
-          'user.createdAt',
-          'vacancies.id',
-          'vacancies.vacancy',
-          'vacancies.link',
-          'vacancies.communication',
-          'vacancies.company',
-          'vacancies.location',
-          'vacancies.work_type',
-          'vacancies.note',
-          'vacancies.isArchive',
-          'vacancies.createdAt',
-          'vacancies.updatedAt',
-          'statuses.id',
-          'statuses.name',
-          'statuses.date',
-          'statuses.rejectReason',
-          'statuses.resume'
+          ...this.selectFields.user,
+          ...this.selectFields.vacancy,
+          ...this.selectFields.status,
+          ...this.selectFields.resume,
+          ...this.selectFields.coverLetter,
+          ...this.selectFields.project,
         ])
         .getOne();
 

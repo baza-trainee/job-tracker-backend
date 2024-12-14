@@ -156,13 +156,13 @@ export class VacanciesService {
 
       // Validate resume for RESUME status
       if (updateStatusDto.name === StatusName.RESUME) {
-        if (!updateStatusDto.resume) {
-          throw new BadRequestException('Resume link is required for resume status');
+        if (!updateStatusDto.resumeId) {
+          throw new BadRequestException('Resume ID is required for resume status');
         }
       } else {
-        // If status is not RESUME, make sure resume is not provided
-        if (updateStatusDto.resume) {
-          throw new BadRequestException('Resume can only be provided for resume status');
+        // If status is not RESUME, make sure resumeId is not provided
+        if (updateStatusDto.resumeId) {
+          throw new BadRequestException('Resume ID can only be provided for resume status');
         }
       }
 
@@ -219,13 +219,13 @@ export class VacanciesService {
 
       // Validate resume for RESUME status
       if (updateStatusDto.name === StatusName.RESUME) {
-        if (!updateStatusDto.resume) {
-          throw new BadRequestException('Resume link is required for resume status');
+        if (!updateStatusDto.resumeId) {
+          throw new BadRequestException('Resume ID is required for resume status');
         }
       } else {
-        // If status is not RESUME, make sure resume is not provided
-        if (updateStatusDto.resume) {
-          throw new BadRequestException('Resume can only be provided for resume status');
+        // If status is not RESUME, make sure resumeId is not provided
+        if (updateStatusDto.resumeId) {
+          throw new BadRequestException('Resume ID can only be provided for resume status');
         }
       }
 
@@ -271,7 +271,7 @@ export class VacanciesService {
 
       // Delete the status
       await this.vacancyStatusService.deleteStatus(statusId);
-      
+
       return { message: 'Status successfully removed' };
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {

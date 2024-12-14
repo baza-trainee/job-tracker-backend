@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsUUID, IsUrl } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { StatusName, RejectReason } from '../../vacancy-status/entities/vacancy-status.entity';
 
@@ -22,13 +22,13 @@ export class UpdateVacancyStatusDto {
   rejectReason?: RejectReason;
 
   @ApiProperty({
-    description: 'URL to the resume. Required and only allowed when status is "RESUME"',
+    description: 'ID of the resume. Required when status is "RESUME"',
     required: false,
-    example: 'https://example.com/my-resume.pdf'
+    example: '123e4567-e89b-12d3-a456-426614174000'
   })
-  @IsUrl()
+  @IsUUID()
   @IsOptional()
-  resume?: string;
+  resumeId?: string;
 
   @ApiProperty({
     description: 'Status ID (required only when updating existing status)',
