@@ -17,12 +17,12 @@ import { CreateCoverLetterDto } from './dto/create-cover-letter.dto';
 import { UpdateCoverLetterDto } from './dto/update-cover-letter.dto';
 import { CoverLetter } from './entities/cover-letter.entity';
 
-@ApiTags('cover-letter')
+@ApiTags('Cover-letter')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('cover-letter')
 export class CoverLetterController {
-  constructor(private readonly coverLetterService: CoverLetterService) {}
+  constructor(private readonly coverLetterService: CoverLetterService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new cover letter' })

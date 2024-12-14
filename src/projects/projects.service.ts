@@ -12,14 +12,15 @@ export class ProjectsService {
     private readonly projectRepository: Repository<Project>,
   ) {}
 
-  async create(userId: string, createProjectDto: CreateProjectDto) {
+  async create(createProjectDto: CreateProjectDto, userId: string): Promise<Project> {
     try {
       const project = this.projectRepository.create({
         ...createProjectDto,
-        userId,
+        user: { id: userId },
       });
-
-      return await this.projectRepository.save(project);
+      await this.projectRepository.save(project);
+      const { user: _, ...result } = project;
+      return result;
     } catch (error) {
       if (error?.code === '23505') { // Unique constraint violation
         throw new BadRequestException('A project with this name already exists');
@@ -28,27 +29,41 @@ export class ProjectsService {
     }
   }
 
-  async findAll(userId: string) {
+  async findAll(userId: string): Promise<Project[]> {
     try {
       return await this.projectRepository.find({
-        where: { userId },
+        where: { user: { id: userId } },
         order: { createdAt: 'DESC' },
+        select: {
+          id: true,
+          name: true,
+          githubLink: true,
+          liveProjectLink: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       });
     } catch (error) {
       throw new InternalServerErrorException('Failed to fetch projects');
     }
   }
 
-  async findOne(id: string, userId: string) {
+  async findOne(id: string, userId: string): Promise<Project> {
     try {
       const project = await this.projectRepository.findOne({
-        where: { id, userId },
+        where: { id, user: { id: userId } },
+        select: {
+          id: true,
+          name: true,
+          githubLink: true,
+          liveProjectLink: true,
+          createdAt: true,
+          updatedAt: true,
+        },
       });
-
       if (!project) {
-        throw new NotFoundException('Project not found');
+        throw new NotFoundException(`Project with ID ${id} not found`);
       }
-
       return project;
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -58,19 +73,13 @@ export class ProjectsService {
     }
   }
 
-  async update(id: string, userId: string, updateProjectDto: UpdateProjectDto) {
+  async update(id: string, updateProjectDto: UpdateProjectDto, userId: string): Promise<Project> {
     try {
-      const project = await this.projectRepository.findOne({
-        where: { id, userId },
-      });
-
-      if (!project) {
-        throw new NotFoundException('Project not found');
-      }
-
+      const project = await this.findOne(id, userId);
       Object.assign(project, updateProjectDto);
-      
-      return await this.projectRepository.save(project);
+      await this.projectRepository.save(project);
+      const { user: _, ...result } = project;
+      return result;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
@@ -85,7 +94,7 @@ export class ProjectsService {
   async remove(id: string, userId: string) {
     try {
       const project = await this.projectRepository.findOne({
-        where: { id, userId },
+        where: { id, user: { id: userId } },
       });
 
       if (!project) {
