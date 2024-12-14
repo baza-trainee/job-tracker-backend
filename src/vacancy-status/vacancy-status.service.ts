@@ -58,7 +58,11 @@ export class VacancyStatusService {
       Object.assign(status, {
         name: updateStatusDto.name,
         ...(updateStatusDto.rejectReason && { rejectReason: updateStatusDto.rejectReason }),
-        ...(updateStatusDto.resumeId && { resumeId: updateStatusDto.resumeId })
+        ...(updateStatusDto.resumeId && { resumeId: updateStatusDto.resumeId }),
+        // Clear resumeId if status is changing from RESUME to something else
+        ...(status.name === StatusName.RESUME && updateStatusDto.name !== StatusName.RESUME && { resumeId: null }),
+        // Clear rejectReason if status is changing from REJECT to something else
+        ...(status.name === StatusName.REJECT && updateStatusDto.name !== StatusName.REJECT && { rejectReason: null })
       });
 
       return await this.vacancyStatusRepository.save(status);
