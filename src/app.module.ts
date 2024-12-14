@@ -13,6 +13,8 @@ import { VacancyStatusModule } from './vacancy-status/vacancy-status.module';
 import { ResumeModule } from './resume/resume.module';
 import { ProjectsModule } from './projects/projects.module';
 import { CoverLetterModule } from './cover-letter/cover-letter.module';
+import { NotesModule } from './notes/notes.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -72,6 +74,8 @@ import { CoverLetterModule } from './cover-letter/cover-letter.module';
     ResumeModule,
     ProjectsModule,
     CoverLetterModule,
+    NotesModule,
+    EventsModule,
   ],
 })
 export class AppModule { }

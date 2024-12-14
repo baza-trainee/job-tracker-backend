@@ -57,6 +57,22 @@ export class UserService {
       'projects.createdAt',
       'projects.updatedAt',
     ],
+    note: [
+      'notes.id',
+      'notes.name',
+      'notes.text',
+      'notes.createdAt',
+      'notes.updatedAt',
+    ],
+    event: [
+      'events.id',
+      'events.name',
+      'events.text',
+      'events.date',
+      'events.time',
+      'events.createdAt',
+      'events.updatedAt',
+    ],
   };
 
   constructor(
@@ -105,13 +121,18 @@ export class UserService {
         .leftJoinAndSelect('user.resumes', 'resumes')
         .leftJoinAndSelect('user.coverLetters', 'coverLetters')
         .leftJoinAndSelect('user.projects', 'projects')
+        .leftJoinAndSelect('user.notes', 'notes')
+        .leftJoinAndSelect('user.events', 'events')
         .where('user.email = :email', { email: user.email })
         .orderBy({
           'vacancies.createdAt': 'DESC',
           'statuses.date': 'DESC',
           'resumes.createdAt': 'DESC',
           'coverLetters.createdAt': 'DESC',
-          'projects.createdAt': 'DESC'
+          'projects.createdAt': 'DESC',
+          'notes.createdAt': 'DESC',
+          'events.date': 'ASC',
+          'events.time': 'ASC'
         })
         .select([
           ...this.selectFields.user,
@@ -120,6 +141,8 @@ export class UserService {
           ...this.selectFields.resume,
           ...this.selectFields.coverLetter,
           ...this.selectFields.project,
+          ...this.selectFields.note,
+          ...this.selectFields.event,
         ])
         .getOne();
 

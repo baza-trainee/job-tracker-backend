@@ -10,6 +10,8 @@ import { Vacancy } from '../../vacancies/entities/vacancy.entity';
 import { Resume } from '../../resume/entities/resume.entity';
 import { CoverLetter } from '../../cover-letter/entities/cover-letter.entity';
 import { Project } from '../../projects/entities/project.entity';
+import { Note } from '../../notes/entities/note.entity';
+import { Event } from '../../events/entities/event.entity';
 
 @Entity({ name: 'User' })
 export class User {
@@ -55,6 +57,14 @@ export class User {
 
   @OneToMany(() => Project, (project) => project.user)
   projects: Project[];
+
+  @ApiProperty({ type: () => [Note], description: 'User notes' })
+  @OneToMany(() => Note, (note) => note.user)
+  notes: Note[];
+
+  @ApiProperty({ type: () => [Event], description: 'User events' })
+  @OneToMany(() => Event, (event) => event.user)
+  events: Event[];
 
   @CreateDateColumn()
   createdAt: Date;

@@ -39,8 +39,8 @@ export class ProjectsController {
     status: HttpStatus.BAD_REQUEST,
     description: 'Invalid input data.',
   })
-  create(@Body() createProjectDto: CreateProjectDto, @Request() req) {
-    return this.projectsService.create(req.user.id, createProjectDto);
+  create(@Request() req, @Body() createProjectDto: CreateProjectDto) {
+    return this.projectsService.create(createProjectDto, req.user.id);
   }
 
   @Get()
@@ -98,10 +98,10 @@ export class ProjectsController {
   })
   update(
     @Param('id') id: string,
-    @Body() updateProjectDto: UpdateProjectDto,
     @Request() req,
+    @Body() updateProjectDto: UpdateProjectDto,
   ) {
-    return this.projectsService.update(id, req.user.id, updateProjectDto);
+    return this.projectsService.update(id, updateProjectDto, req.user.id);
   }
 
   @Delete(':id')

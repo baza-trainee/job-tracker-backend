@@ -9,24 +9,21 @@ import {
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 
-@Entity({ name: 'Resume' })
-export class Resume {
+@Entity({ name: 'Note' })
+export class Note {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ApiProperty({ description: 'Resume name' })
+  @ApiProperty({ description: 'Note name' })
   @Column()
   name: string;
 
-  @ApiProperty({ description: 'Resume link/URL' })
-  @Column()
-  link: string;
+  @ApiProperty({ description: 'Note text content' })
+  @Column({ type: 'text', nullable: true })
+  text: string;
 
-  @ManyToOne(() => User, (user) => user.resumes, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.notes, { onDelete: 'CASCADE' })
   user?: User;
-
-  @Column()
-  userId: string;
 
   @CreateDateColumn()
   createdAt: Date;

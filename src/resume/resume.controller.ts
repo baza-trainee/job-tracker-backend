@@ -15,12 +15,12 @@ import { ResumeService } from './resume.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
 import { UpdateResumeDto } from './dto/update-resume.dto';
 
-@ApiTags('resumes')
+@ApiTags('Resumes')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('resume')
 export class ResumeController {
-  constructor(private readonly resumeService: ResumeService) {}
+  constructor(private readonly resumeService: ResumeService) { }
 
   @Post()
   create(@Request() req, @Body() createResumeDto: CreateResumeDto) {

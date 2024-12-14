@@ -34,5 +34,5 @@ export class Project {
 
   @ManyToOne(() => User, (user) => user.projects, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user?: User;
 }
