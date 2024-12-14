@@ -222,6 +222,47 @@ export class VacanciesController {
     return this.vacanciesService.updateStatus(id, req.user.id, updateStatusDto);
   }
 
+  @Delete('status/:vacancyId/:statusId')
+  @ApiOperation({ 
+    summary: 'Delete vacancy status',
+    description: 'Deletes a specific status from a vacancy. The initial "saved" status cannot be deleted.'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Status successfully removed' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.BAD_REQUEST, 
+    description: 'Cannot delete the initial saved status' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vacancy or status not found' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.UNAUTHORIZED, 
+    description: 'Unauthorized - valid JWT token required' 
+  })
+  @ApiParam({ 
+    name: 'vacancyId', 
+    description: 'Vacancy ID',
+    type: 'string',
+    format: 'uuid'
+  })
+  @ApiParam({ 
+    name: 'statusId', 
+    description: 'Status ID to delete',
+    type: 'string',
+    format: 'uuid'
+  })
+  deleteStatus(
+    @Param('vacancyId') id: string,
+    @Param('statusId') statusId: string,
+    @Request() req,
+  ) {
+    return this.vacanciesService.deleteStatus(id, statusId, req.user.id);
+  }
+
   @Delete(':id')
   @ApiOperation({ 
     summary: 'Delete a vacancy',
