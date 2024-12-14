@@ -52,7 +52,7 @@ export class VacancyStatus {
   rejectReason?: RejectReason;
 
   @Column({ nullable: true })
-  resume?: string;
+  resumeId?: string;
 
   @ManyToOne(() => Vacancy, (vacancy) => vacancy.statuses, { onDelete: 'CASCADE', eager: false })
   @JoinColumn()

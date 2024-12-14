@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ForbiddenException, HttpStatus } from '@nestjs/common';
 import { VacanciesService } from './vacancies.service';
 import { CreateVacancyDto } from './dto/create-vacancy.dto';
 import { UpdateVacancyDto } from './dto/update-vacancy.dto';
@@ -15,36 +15,105 @@ export class VacanciesController {
   constructor(private readonly vacanciesService: VacanciesService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Create a new vacancy' })
-  @ApiResponse({ status: 201, description: 'Vacancy successfully created', type: Vacancy })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ 
+    summary: 'Create a new vacancy',
+    description: 'Creates a new vacancy for the authenticated user. Automatically adds an initial "saved" status.'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.CREATED, 
+    description: 'Vacancy successfully created',
+    type: Vacancy 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.UNAUTHORIZED, 
+    description: 'Unauthorized - valid JWT token required' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.BAD_REQUEST, 
+    description: 'Invalid input data provided' 
+  })
   create(@Request() req, @Body() createVacancyDto: CreateVacancyDto) {
     return this.vacanciesService.create(req.user.id, createVacancyDto);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all vacancies for the current user' })
-  @ApiResponse({ status: 200, description: 'Return all vacancies', type: [Vacancy] })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ 
+    summary: 'Get all vacancies for the current user',
+    description: 'Returns all vacancies belonging to the authenticated user, ordered by creation date'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Returns all vacancies with their statuses',
+    type: [Vacancy] 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.UNAUTHORIZED, 
+    description: 'Unauthorized - valid JWT token required' 
+  })
   findAll(@Request() req) {
     return this.vacanciesService.findAll(req.user.id);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a vacancy by id' })
-  @ApiResponse({ status: 200, description: 'Return the vacancy', type: Vacancy })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'Vacancy not found' })
+  @ApiOperation({ 
+    summary: 'Get a vacancy by id',
+    description: 'Returns a specific vacancy if it belongs to the authenticated user'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Returns the vacancy with its statuses',
+    type: Vacancy 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.UNAUTHORIZED, 
+    description: 'Unauthorized - valid JWT token required' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vacancy not found or does not belong to the user' 
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'Vacancy ID',
+    type: 'string',
+    format: 'uuid'
+  })
   findOne(@Param('id') id: string, @Request() req) {
     return this.vacanciesService.findOne(id, req.user.id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a vacancy' })
-  @ApiResponse({ status: 200, description: 'Vacancy successfully updated', type: Vacancy })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - can only update own vacancies' })
-  @ApiResponse({ status: 404, description: 'Vacancy not found' })
+  @ApiOperation({ 
+    summary: 'Update a vacancy',
+    description: 'Updates a specific vacancy if it belongs to the authenticated user'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vacancy successfully updated',
+    type: Vacancy 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.UNAUTHORIZED, 
+    description: 'Unauthorized - valid JWT token required' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.FORBIDDEN, 
+    description: 'Forbidden - vacancy belongs to another user' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vacancy not found' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.BAD_REQUEST, 
+    description: 'Invalid input data provided' 
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'Vacancy ID',
+    type: 'string',
+    format: 'uuid'
+  })
   update(
     @Param('id') id: string,
     @Request() req,
@@ -54,20 +123,46 @@ export class VacanciesController {
   }
 
   @Post('status/:vacancyId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Add new vacancy status',
     description: `
-    Adds a new status to the vacancy. Special validation rules apply:
-    
-    - For REJECT status: rejectReason is required and can only be used with this status
-    - For RESUME status: resume link is required and can only be used with this status
-    - Other statuses should not include rejectReason or resume
+    Adds a new status to the vacancy. The following validation rules apply:
+
+    1. REJECT status:
+       - rejectReason is required
+       - resumeId must not be provided
+
+    2. RESUME status:
+       - resumeId is required (UUID of an existing resume)
+       - rejectReason must not be provided
+
+    3. Other statuses (HR, TEST, TECH, OFFER):
+       - Neither rejectReason nor resumeId should be provided
     `
   })
-  @ApiResponse({ status: 201, type: Vacancy, description: 'Status successfully added' })
-  @ApiResponse({ status: 400, description: 'Invalid status data provided. Common cases: Missing rejectReason for REJECT status, missing resume for RESUME status, or providing these fields with wrong status type' })
-  @ApiResponse({ status: 404, description: 'Vacancy not found' })
-  @ApiParam({ name: 'vacancyId', description: 'Vacancy ID' })
+  @ApiResponse({ 
+    status: HttpStatus.CREATED, 
+    type: Vacancy, 
+    description: 'Status successfully added' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.BAD_REQUEST, 
+    description: 'Invalid status data provided. Common cases:\n- Missing rejectReason for REJECT status\n- Missing resumeId for RESUME status\n- Providing rejectReason or resumeId with wrong status type' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vacancy not found or resumeId references non-existent resume' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.UNAUTHORIZED, 
+    description: 'Unauthorized - valid JWT token required' 
+  })
+  @ApiParam({ 
+    name: 'vacancyId', 
+    description: 'Vacancy ID',
+    type: 'string',
+    format: 'uuid'
+  })
   addStatus(
     @Param('vacancyId') id: string,
     @Request() req,
@@ -77,20 +172,48 @@ export class VacanciesController {
   }
 
   @Patch('status/:vacancyId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update existing vacancy status',
     description: `
-    Updates an existing vacancy status. Special validation rules apply:
-    
-    - For REJECT status: rejectReason is required and can only be used with this status
-    - For RESUME status: resume link is required and can only be used with this status
-    - Other statuses should not include rejectReason or resume
+    Updates an existing vacancy status. The following validation rules apply:
+
+    1. REJECT status:
+       - rejectReason is required
+       - resumeId must not be provided
+
+    2. RESUME status:
+       - resumeId is required (UUID of an existing resume)
+       - rejectReason must not be provided
+
+    3. Other statuses (HR, TEST, TECH, OFFER):
+       - Neither rejectReason nor resumeId should be provided
+
+    Note: statusId is required in the request body to identify which status to update
     `
   })
-  @ApiResponse({ status: 200, type: Vacancy, description: 'Status successfully updated' })
-  @ApiResponse({ status: 400, description: 'Invalid status data provided. Common cases: Missing rejectReason for REJECT status, missing resume for RESUME status, or providing these fields with wrong status type' })
-  @ApiResponse({ status: 404, description: 'Vacancy or status not found' })
-  @ApiParam({ name: 'vacancyId', description: 'Vacancy ID' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    type: Vacancy, 
+    description: 'Status successfully updated' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.BAD_REQUEST, 
+    description: 'Invalid status data provided. Common cases:\n- Missing statusId\n- Missing rejectReason for REJECT status\n- Missing resumeId for RESUME status\n- Providing rejectReason or resumeId with wrong status type' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vacancy, status, or referenced resume not found' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.UNAUTHORIZED, 
+    description: 'Unauthorized - valid JWT token required' 
+  })
+  @ApiParam({ 
+    name: 'vacancyId', 
+    description: 'Vacancy ID',
+    type: 'string',
+    format: 'uuid'
+  })
   updateStatus(
     @Param('vacancyId') id: string,
     @Request() req,
@@ -99,27 +222,29 @@ export class VacanciesController {
     return this.vacanciesService.updateStatus(id, req.user.id, updateStatusDto);
   }
 
-  @Delete('status/:vacancyId/:statusId')
-  @ApiOperation({ summary: 'Delete vacancy status' })
-  @ApiResponse({ status: 200, description: 'Status successfully removed' })
-  @ApiResponse({ status: 400, description: 'Cannot delete the initial saved status' })
-  @ApiResponse({ status: 404, description: 'Vacancy or status not found' })
-  @ApiParam({ name: 'vacancyId', description: 'Vacancy ID' })
-  @ApiParam({ name: 'statusId', description: 'Status ID to delete' })
-  deleteStatus(
-    @Param('vacancyId') id: string,
-    @Param('statusId') statusId: string,
-    @Request() req,
-  ) {
-    return this.vacanciesService.deleteStatus(id, statusId, req.user.id);
-  }
-
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a vacancy' })
-  @ApiResponse({ status: 200, description: 'Vacancy successfully deleted' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - can only delete own vacancies' })
-  @ApiResponse({ status: 404, description: 'Vacancy not found' })
+  @ApiOperation({ 
+    summary: 'Delete a vacancy',
+    description: 'Deletes a vacancy and all its associated statuses'
+  })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Vacancy successfully deleted' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.NOT_FOUND, 
+    description: 'Vacancy not found' 
+  })
+  @ApiResponse({ 
+    status: HttpStatus.UNAUTHORIZED, 
+    description: 'Unauthorized - valid JWT token required' 
+  })
+  @ApiParam({ 
+    name: 'id', 
+    description: 'Vacancy ID',
+    type: 'string',
+    format: 'uuid'
+  })
   remove(@Param('id') id: string, @Request() req) {
     return this.vacanciesService.remove(id, req.user.id);
   }

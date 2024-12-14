@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VacancyStatus, StatusName } from './entities/vacancy-status.entity';
@@ -10,7 +10,7 @@ export class VacancyStatusService {
   constructor(
     @InjectRepository(VacancyStatus)
     private readonly vacancyStatusRepository: Repository<VacancyStatus>,
-  ) {}
+  ) { }
 
   async createInitialStatus(vacancy: Vacancy) {
     const status = this.vacancyStatusRepository.create({
@@ -23,6 +23,10 @@ export class VacancyStatusService {
 
   async createStatus(vacancy: Vacancy, statusData: Partial<VacancyStatus>) {
     try {
+      if (statusData.name === StatusName.RESUME && !statusData.resumeId) {
+        throw new BadRequestException('Resume ID is required for resume status');
+      }
+
       const status = this.vacancyStatusRepository.create({
         ...statusData,
         vacancy,
@@ -30,6 +34,9 @@ export class VacancyStatusService {
 
       return await this.vacancyStatusRepository.save(status);
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new Error('Failed to create vacancy status');
     }
   }
@@ -44,15 +51,19 @@ export class VacancyStatusService {
         throw new NotFoundException('Status not found');
       }
 
+      if (updateStatusDto.name === StatusName.RESUME && !updateStatusDto.resumeId) {
+        throw new BadRequestException('Resume ID is required for resume status');
+      }
+
       Object.assign(status, {
         name: updateStatusDto.name,
         ...(updateStatusDto.rejectReason && { rejectReason: updateStatusDto.rejectReason }),
-        ...(updateStatusDto.resume && { resume: updateStatusDto.resume })
+        ...(updateStatusDto.resumeId && { resumeId: updateStatusDto.resumeId })
       });
 
       return await this.vacancyStatusRepository.save(status);
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }
       throw new Error('Failed to update vacancy status');
