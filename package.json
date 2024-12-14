@@ -6,7 +6,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "build": "export NODE_OPTIONS='--max-old-space-size=8192' && nest build",
+    "prebuild": "rimraf dist",
+    "build": "nest build && cp -r src/predictions/data dist/predictions/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "export NODE_OPTIONS='--max-old-space-size=8192' && nest start",
     "dev": "nest start --watch",

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, UseGuards, Request, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, HttpStatus } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -75,7 +75,7 @@ export class EventsController {
     return this.eventsService.findOne(id, req.user.id);
   }
 
-  @Put(':id')
+  @Patch(':id')
   @ApiOperation({ 
     summary: 'Update an event',
     description: 'Updates an event if it belongs to the authenticated user'
