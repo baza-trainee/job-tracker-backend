@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, ForbiddenException, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { VacanciesService } from './vacancies.service';
 import { CreateVacancyDto } from './dto/create-vacancy.dto';
 import { UpdateVacancyDto } from './dto/update-vacancy.dto';
@@ -15,65 +15,65 @@ export class VacanciesController {
   constructor(private readonly vacanciesService: VacanciesService) { }
 
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new vacancy',
     description: 'Creates a new vacancy for the authenticated user. Automatically adds an initial "saved" status.'
   })
-  @ApiResponse({ 
-    status: HttpStatus.CREATED, 
+  @ApiResponse({
+    status: HttpStatus.CREATED,
     description: 'Vacancy successfully created',
-    type: Vacancy 
+    type: Vacancy
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Invalid input data provided' 
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data provided'
   })
   create(@Request() req, @Body() createVacancyDto: CreateVacancyDto) {
     return this.vacanciesService.create(req.user.id, createVacancyDto);
   }
 
   @Get()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get all vacancies for the current user',
     description: 'Returns all vacancies belonging to the authenticated user, ordered by creation date'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Returns all vacancies with their statuses',
-    type: [Vacancy] 
+    type: [Vacancy]
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
   })
   findAll(@Request() req) {
     return this.vacanciesService.findAll(req.user.id);
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get a vacancy by id',
     description: 'Returns a specific vacancy if it belongs to the authenticated user'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Returns the vacancy with its statuses',
-    type: Vacancy 
+    type: Vacancy
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Vacancy not found or does not belong to the user' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Vacancy not found or does not belong to the user'
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'Vacancy ID',
     type: 'string',
     format: 'uuid'
@@ -83,33 +83,33 @@ export class VacanciesController {
   }
 
   @Patch(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update a vacancy',
     description: 'Updates a specific vacancy if it belongs to the authenticated user'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: HttpStatus.OK,
     description: 'Vacancy successfully updated',
-    type: Vacancy 
+    type: Vacancy
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
   })
-  @ApiResponse({ 
-    status: HttpStatus.FORBIDDEN, 
-    description: 'Forbidden - vacancy belongs to another user' 
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden - vacancy belongs to another user'
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Vacancy not found' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Vacancy not found'
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Invalid input data provided' 
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid input data provided'
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'Vacancy ID',
     type: 'string',
     format: 'uuid'
@@ -120,6 +120,39 @@ export class VacanciesController {
     @Body() updateVacancyDto: UpdateVacancyDto,
   ) {
     return this.vacanciesService.update(id, req.user.id, updateVacancyDto);
+  }
+
+  @Post('archive/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Archive or unarchive a vacancy',
+    description: 'Changes isArchive field of a specific vacancy if it belongs to the authenticated user'
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Vacancy archived statussuccessfully changed',
+    type: Vacancy
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Forbidden - vacancy belongs to another user'
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Vacancy not found'
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Vacancy ID',
+    type: 'string',
+    format: 'uuid'
+  })
+  archive(@Param('id') id: string, @Request() req) {
+    return this.vacanciesService.archive(id, req.user.id);
   }
 
   @Post('status/:vacancyId')
@@ -140,25 +173,25 @@ export class VacanciesController {
        - Neither rejectReason nor resumeId should be provided
     `
   })
-  @ApiResponse({ 
-    status: HttpStatus.CREATED, 
-    type: Vacancy, 
-    description: 'Status successfully added' 
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    type: Vacancy,
+    description: 'Status successfully added'
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Invalid status data provided. Common cases:\n- Missing rejectReason for REJECT status\n- Missing resumeId for RESUME status\n- Providing rejectReason or resumeId with wrong status type' 
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid status data provided. Common cases:\n- Missing rejectReason for REJECT status\n- Missing resumeId for RESUME status\n- Providing rejectReason or resumeId with wrong status type'
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Vacancy not found or resumeId references non-existent resume' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Vacancy not found or resumeId references non-existent resume'
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
   })
-  @ApiParam({ 
-    name: 'vacancyId', 
+  @ApiParam({
+    name: 'vacancyId',
     description: 'Vacancy ID',
     type: 'string',
     format: 'uuid'
@@ -191,25 +224,25 @@ export class VacanciesController {
     Note: statusId is required in the request body to identify which status to update
     `
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    type: Vacancy, 
-    description: 'Status successfully updated' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: Vacancy,
+    description: 'Status successfully updated'
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Invalid status data provided. Common cases:\n- Missing statusId\n- Missing rejectReason for REJECT status\n- Missing resumeId for RESUME status\n- Providing rejectReason or resumeId with wrong status type' 
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid status data provided. Common cases:\n- Missing statusId\n- Missing rejectReason for REJECT status\n- Missing resumeId for RESUME status\n- Providing rejectReason or resumeId with wrong status type'
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Vacancy, status, or referenced resume not found' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Vacancy, status, or referenced resume not found'
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
   })
-  @ApiParam({ 
-    name: 'vacancyId', 
+  @ApiParam({
+    name: 'vacancyId',
     description: 'Vacancy ID',
     type: 'string',
     format: 'uuid'
@@ -223,34 +256,34 @@ export class VacanciesController {
   }
 
   @Delete('status/:vacancyId/:statusId')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete vacancy status',
     description: 'Deletes a specific status from a vacancy. The initial "saved" status cannot be deleted.'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Status successfully removed' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Status successfully removed'
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Cannot delete the initial saved status' 
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Cannot delete the initial saved status'
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Vacancy or status not found' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Vacancy or status not found'
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
   })
-  @ApiParam({ 
-    name: 'vacancyId', 
+  @ApiParam({
+    name: 'vacancyId',
     description: 'Vacancy ID',
     type: 'string',
     format: 'uuid'
   })
-  @ApiParam({ 
-    name: 'statusId', 
+  @ApiParam({
+    name: 'statusId',
     description: 'Status ID to delete',
     type: 'string',
     format: 'uuid'
@@ -264,24 +297,24 @@ export class VacanciesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete a vacancy',
     description: 'Deletes a vacancy and all its associated statuses'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Vacancy successfully deleted' 
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Vacancy successfully deleted'
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Vacancy not found' 
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Vacancy not found'
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Unauthorized - valid JWT token required'
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'Vacancy ID',
     type: 'string',
     format: 'uuid'
