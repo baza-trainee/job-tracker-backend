@@ -61,7 +61,7 @@ export class VacanciesService {
           location: true,
           work_type: true,
           note: true,
-          isArchive: true,
+          isArchived: true,
           createdAt: true,
           updatedAt: true
         }
@@ -86,7 +86,7 @@ export class VacanciesService {
           location: true,
           work_type: true,
           note: true,
-          isArchive: true,
+          isArchived: true,
           createdAt: true,
           updatedAt: true
         }
@@ -128,6 +128,28 @@ export class VacanciesService {
         throw error;
       }
       throw new Error('Failed to update vacancy');
+    }
+  }
+
+  async archive(id: string, userId: string) {
+    try {
+      const vacancy = await this.vacancyRepository.findOne({
+        where: { id, user: { id: userId } },
+        relations: ['user']
+      });
+
+      if (!vacancy) {
+        throw new NotFoundException('Vacancy not found');
+      }
+
+      vacancy.isArchived = !vacancy.isArchived;
+      const updatedVacancy = await this.vacancyRepository.save(vacancy);
+      return this.sanitizeVacancy(updatedVacancy);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new Error('Failed to archive vacancy');
     }
   }
 

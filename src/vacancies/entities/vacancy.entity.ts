@@ -43,7 +43,7 @@ export class Vacancy {
   note: string;
 
   @Column({ default: false })
-  isArchive: boolean;
+  isArchived: boolean;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn()
