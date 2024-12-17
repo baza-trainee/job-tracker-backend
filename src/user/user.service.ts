@@ -24,7 +24,7 @@ export class UserService {
       'vacancies.location',
       'vacancies.work_type',
       'vacancies.note',
-      'vacancies.isArchive',
+      'vacancies.isArchived',
       'vacancies.createdAt',
       'vacancies.updatedAt',
     ],
@@ -132,7 +132,6 @@ export class UserService {
           'projects.createdAt': 'DESC',
           'notes.createdAt': 'DESC',
           'events.date': 'ASC',
-          'events.time': 'ASC'
         })
         .select([
           ...this.selectFields.user,
