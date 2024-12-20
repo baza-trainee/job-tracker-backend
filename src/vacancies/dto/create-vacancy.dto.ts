@@ -1,19 +1,30 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 import { WorkType } from '../entities/vacancy.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateVacancyDto {
-  @ApiProperty({ description: 'Vacancy title/position' })
+  @ApiProperty({ 
+    description: 'Vacancy title/position',
+    example: 'Senior TypeScript Developer'
+  })
   @IsString()
   @IsNotEmpty()
   vacancy: string;
 
-  @ApiProperty({ description: 'Link to the vacancy' })
+  @ApiProperty({ 
+    description: 'Link to the vacancy posting',
+    example: 'https://example.com/job-posting'
+  })
   @IsString()
+  @IsUrl({}, { message: 'Invalid URL format for vacancy link' })
   @IsNotEmpty()
   link: string;
 
-  @ApiProperty({ description: 'Communication details (optional)', required: false })
+  @ApiProperty({ 
+    description: 'Communication details (email, phone, contact person)',
+    required: false,
+    example: 'Contact John Doe at john@company.com'
+  })
   @IsString()
   @IsOptional()
   communication?: string;
