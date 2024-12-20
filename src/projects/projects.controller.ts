@@ -1,124 +1,119 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-  UseGuards,
-  Request,
-  HttpStatus,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Project } from './entities/project.entity';
+import { UUIDValidationPipe } from '../common/pipes/uuid-validation.pipe';
 
 @ApiTags('Projects')
-@ApiBearerAuth()
+@ApiBearerAuth('access-token')
 @UseGuards(JwtAuthGuard)
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) { }
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new project' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'The project has been successfully created.',
-    type: Project,
+  @ApiOperation({
+    summary: 'Create a new project',
+    description: 'Creates a new project for the authenticated user'
   })
   @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized.',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data.',
+    status: 201,
+    description: 'Project successfully created',
+    type: Project
   })
   create(@Request() req, @Body() createProjectDto: CreateProjectDto) {
     return this.projectsService.create(createProjectDto, req.user.id);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all projects for the current user' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Returns an array of projects.',
-    type: [Project],
+  @ApiOperation({
+    summary: 'Get all projects',
+    description: 'Returns all projects for the authenticated user'
   })
   @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized.',
+    status: 200,
+    description: 'Returns all projects',
+    type: [Project]
   })
   findAll(@Request() req) {
     return this.projectsService.findAll(req.user.id);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a specific project by ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Returns the project.',
-    type: Project,
+  @ApiOperation({
+    summary: 'Get a project by id',
+    description: 'Returns a specific project if it belongs to the authenticated user'
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Project not found.',
+    status: 200,
+    description: 'Returns the project',
+    type: Project
   })
   @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized.',
+    status: 400,
+    description: 'Invalid UUID format'
   })
-  findOne(@Param('id') id: string, @Request() req) {
+  @ApiParam({
+    name: 'id',
+    description: 'Project ID',
+    type: 'string',
+    format: 'uuid'
+  })
+  findOne(@Param('id', UUIDValidationPipe) id: string, @Request() req) {
     return this.projectsService.findOne(id, req.user.id);
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update a project' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'The project has been successfully updated.',
-    type: Project,
+  @ApiOperation({
+    summary: 'Update a project',
+    description: 'Updates a project if it belongs to the authenticated user'
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Project not found.',
+    status: 200,
+    description: 'Project successfully updated',
+    type: Project
   })
   @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized.',
+    status: 400,
+    description: 'Invalid UUID format'
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data.',
+  @ApiParam({
+    name: 'id',
+    description: 'Project ID',
+    type: 'string',
+    format: 'uuid'
   })
   update(
-    @Param('id') id: string,
+    @Param('id', UUIDValidationPipe) id: string,
     @Request() req,
-    @Body() updateProjectDto: UpdateProjectDto,
+    @Body() updateProjectDto: UpdateProjectDto
   ) {
     return this.projectsService.update(id, updateProjectDto, req.user.id);
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a project' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'The project has been successfully deleted.',
+  @ApiOperation({
+    summary: 'Delete a project',
+    description: 'Deletes a project if it belongs to the authenticated user'
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Project not found.',
+    status: 200,
+    description: 'Project successfully deleted'
   })
   @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized.',
+    status: 400,
+    description: 'Invalid UUID format'
   })
-  remove(@Param('id') id: string, @Request() req) {
+  @ApiParam({
+    name: 'id',
+    description: 'Project ID',
+    type: 'string',
+    format: 'uuid'
+  })
+  remove(@Param('id', UUIDValidationPipe) id: string, @Request() req) {
     return this.projectsService.remove(id, req.user.id);
   }
 }
