@@ -3,9 +3,10 @@ import { PredictionsService } from './predictions.service';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
 import { UpdatePredictionDto } from './dto/update-prediction.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { User } from '../user/entities/user.entity';
 import { Prediction } from './entities/prediction.entity';
+import { UUIDValidationPipe } from '../common/pipes/uuid-validation.pipe';
 
 @ApiTags('Predictions')
 @ApiBearerAuth('access-token')
@@ -90,7 +91,13 @@ export class PredictionsController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized - valid JWT token required'
   })
-  findOne(@Param('id') id: string, @Request() req) {
+  @ApiParam({
+    name: 'id',
+    description: 'Prediction ID',
+    type: 'string',
+    format: 'uuid'
+  })
+  findOne(@Param('id', UUIDValidationPipe) id: string, @Request() req) {
     return this.predictionsService.findOne(id, req.user.id);
   }
 
@@ -116,8 +123,14 @@ export class PredictionsController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized - valid JWT token required'
   })
+  @ApiParam({
+    name: 'id',
+    description: 'Prediction ID',
+    type: 'string',
+    format: 'uuid'
+  })
   update(
-    @Param('id') id: string,
+    @Param('id', UUIDValidationPipe) id: string,
     @Request() req,
     @Body() updatePredictionDto: UpdatePredictionDto,
   ) {
@@ -167,7 +180,13 @@ export class PredictionsController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Unauthorized - valid JWT token required'
   })
-  remove(@Param('id') id: string, @Request() req) {
+  @ApiParam({
+    name: 'id',
+    description: 'Prediction ID',
+    type: 'string',
+    format: 'uuid'
+  })
+  remove(@Param('id', UUIDValidationPipe) id: string, @Request() req) {
     return this.predictionsService.remove(id, req.user.id);
   }
 }

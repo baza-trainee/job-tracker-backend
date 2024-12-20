@@ -43,7 +43,10 @@ export class VacanciesService {
 
       return this.sanitizeVacancy(savedVacancy);
     } catch (error) {
-      throw new Error('Failed to create vacancy');
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException('Invalid request');
     }
   }
 
@@ -68,7 +71,7 @@ export class VacanciesService {
       });
       return vacancies;
     } catch (error) {
-      throw new Error('Failed to fetch vacancies');
+      throw new BadRequestException('Invalid request');
     }
   }
 
@@ -101,7 +104,7 @@ export class VacanciesService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new Error('Failed to fetch vacancy');
+      throw new BadRequestException('Invalid request');
     }
   }
 
@@ -127,7 +130,7 @@ export class VacanciesService {
       if (error instanceof NotFoundException || error instanceof ForbiddenException) {
         throw error;
       }
-      throw new Error('Failed to update vacancy');
+      throw new BadRequestException('Invalid request');
     }
   }
 
@@ -149,7 +152,7 @@ export class VacanciesService {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new Error('Failed to archive vacancy');
+      throw new BadRequestException('Invalid request');
     }
   }
 
@@ -202,14 +205,14 @@ export class VacanciesService {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new Error('Failed to add vacancy status');
+      throw new BadRequestException('Invalid request');
     }
   }
 
-  async updateStatus(id: string, userId: string, updateStatusDto: UpdateVacancyStatusDto) {
+  async updateStatus(vacancyId: string, statusId: string, userId: string, updateStatusDto: UpdateVacancyStatusDto) {
     try {
       const vacancy = await this.vacancyRepository.findOne({
-        where: { id, user: { id: userId } },
+        where: { id: vacancyId, user: { id: userId } },
         relations: ['statuses'],
       });
 
@@ -217,13 +220,9 @@ export class VacanciesService {
         throw new NotFoundException('Vacancy not found');
       }
 
-      if (!updateStatusDto.statusId) {
-        throw new BadRequestException('Status ID is required for updating');
-      }
-
-      // Find the specific status to update
-      const statusToUpdate = vacancy.statuses.find(s => s.id === updateStatusDto.statusId);
-      if (!statusToUpdate) {
+      // Find the specific status
+      const status = vacancy.statuses.find(s => s.id === statusId);
+      if (!status) {
         throw new NotFoundException('Status not found');
       }
 
@@ -252,20 +251,24 @@ export class VacanciesService {
       }
 
       // Update the status
-      await this.vacancyStatusService.updateStatus(statusToUpdate.id, updateStatusDto);
+      await this.vacancyStatusService.updateStatus(status.id, updateStatusDto);
 
       // Fetch updated vacancy with all statuses
       const updatedVacancy = await this.vacancyRepository.findOne({
-        where: { id },
+        where: { id: vacancyId },
         relations: ['statuses'],
       });
 
-      return updatedVacancy;
+      if (!updatedVacancy) {
+        throw new NotFoundException('Vacancy not found after update');
+      }
+
+      return this.sanitizeVacancy(updatedVacancy);
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new Error('Failed to update vacancy status');
+      throw new BadRequestException('Failed to update status');
     }
   }
 
@@ -299,7 +302,7 @@ export class VacanciesService {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new Error('Failed to delete vacancy status');
+      throw new BadRequestException('Invalid request');
     }
   }
 
@@ -324,7 +327,7 @@ export class VacanciesService {
       if (error instanceof NotFoundException || error instanceof ForbiddenException) {
         throw error;
       }
-      throw new Error('Failed to delete vacancy');
+      throw new BadRequestException('Invalid request');
     }
   }
 }

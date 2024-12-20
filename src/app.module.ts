@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { join } from 'path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -16,6 +16,8 @@ import { CoverLetterModule } from './cover-letter/cover-letter.module';
 import { NotesModule } from './notes/notes.module';
 import { EventsModule } from './events/events.module';
 import { PredictionsModule } from './predictions/predictions.module';
+import { NoQueryParamsMiddleware } from './common/middleware/no-query-params.middleware';
+import { MalformedUrlMiddleware } from './common/middleware/malformed-url.middleware';
 
 @Module({
   imports: [
@@ -80,4 +82,14 @@ import { PredictionsModule } from './predictions/predictions.module';
     PredictionsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(MalformedUrlMiddleware)
+      .exclude(
+        { path: 'auth/(.*)', method: RequestMethod.ALL },  // Exclude auth routes
+        { path: 'mailing/(.*)', method: RequestMethod.ALL } // Exclude mailing routes
+      )
+      .forRoutes('*');
+  }
+}

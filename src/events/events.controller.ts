@@ -2,9 +2,10 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, 
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Event } from './entities/event.entity';
+import { UUIDValidationPipe } from '../common/pipes/uuid-validation.pipe';
 
 @ApiTags('Events')
 @ApiBearerAuth('access-token')
@@ -14,115 +15,105 @@ export class EventsController {
   constructor(private readonly eventsService: EventsService) {}
 
   @Post()
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new event',
     description: 'Creates a new event for the authenticated user'
   })
-  @ApiResponse({ 
-    status: HttpStatus.CREATED, 
+  @ApiResponse({
+    status: 201,
     description: 'Event successfully created',
-    type: Event 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Invalid input data provided' 
+    type: Event
   })
   create(@Request() req, @Body() createEventDto: CreateEventDto) {
     return this.eventsService.create(createEventDto, req.user.id);
   }
 
   @Get()
-  @ApiOperation({ 
-    summary: 'Get all events for the current user',
-    description: 'Returns all events belonging to the authenticated user, ordered by creation date'
+  @ApiOperation({
+    summary: 'Get all events',
+    description: 'Returns all events for the authenticated user'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: 200,
     description: 'Returns all events',
-    type: [Event] 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+    type: [Event]
   })
   findAll(@Request() req) {
     return this.eventsService.findAll(req.user.id);
   }
 
   @Get(':id')
-  @ApiOperation({ 
-    summary: 'Get a specific event',
-    description: 'Returns a specific event by ID if it belongs to the authenticated user'
+  @ApiOperation({
+    summary: 'Get an event by id',
+    description: 'Returns a specific event if it belongs to the authenticated user'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: 200,
     description: 'Returns the event',
-    type: Event 
+    type: Event
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Event not found' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid UUID format'
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiParam({
+    name: 'id',
+    description: 'Event ID',
+    type: 'string',
+    format: 'uuid'
   })
-  findOne(@Param('id') id: string, @Request() req) {
+  findOne(@Param('id', UUIDValidationPipe) id: string, @Request() req) {
     return this.eventsService.findOne(id, req.user.id);
   }
 
   @Patch(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Update an event',
     description: 'Updates an event if it belongs to the authenticated user'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
+  @ApiResponse({
+    status: 200,
     description: 'Event successfully updated',
-    type: Event 
+    type: Event
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Event not found' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid UUID format'
   })
-  @ApiResponse({ 
-    status: HttpStatus.BAD_REQUEST, 
-    description: 'Invalid input data provided' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiParam({
+    name: 'id',
+    description: 'Event ID',
+    type: 'string',
+    format: 'uuid'
   })
   update(
-    @Param('id') id: string,
+    @Param('id', UUIDValidationPipe) id: string,
     @Request() req,
-    @Body() updateEventDto: UpdateEventDto,
+    @Body() updateEventDto: UpdateEventDto
   ) {
     return this.eventsService.update(id, updateEventDto, req.user.id);
   }
 
   @Delete(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Delete an event',
     description: 'Deletes an event if it belongs to the authenticated user'
   })
-  @ApiResponse({ 
-    status: HttpStatus.OK, 
-    description: 'Event successfully deleted' 
+  @ApiResponse({
+    status: 200,
+    description: 'Event successfully deleted'
   })
-  @ApiResponse({ 
-    status: HttpStatus.NOT_FOUND, 
-    description: 'Event not found' 
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid UUID format'
   })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Unauthorized - valid JWT token required' 
+  @ApiParam({
+    name: 'id',
+    description: 'Event ID',
+    type: 'string',
+    format: 'uuid'
   })
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id', UUIDValidationPipe) id: string, @Request() req) {
     return this.eventsService.remove(id, req.user.id);
   }
 }
