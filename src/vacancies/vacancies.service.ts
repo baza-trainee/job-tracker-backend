@@ -67,6 +67,11 @@ export class VacanciesService {
           isArchived: true,
           createdAt: true,
           updatedAt: true
+        },
+        order: {
+          statuses: {
+            date: 'DESC'
+          }
         }
       });
       return vacancies;
