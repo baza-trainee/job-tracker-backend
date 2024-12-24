@@ -194,7 +194,7 @@ export class VacanciesController {
       '- HR: HR interview stage\n' +
       '- TEST: Technical test stage\n' +
       '- TECH: Technical interview stage\n' +
-      '- REJECT: Requires rejectReason field with one of the following values:\n' +
+      '- REJECT: Requires rejectReason field with one of the following values:\n' +x
       '  * SOFT_SKILLS: Rejected due to soft skills assessment\n' +
       '  * TECH_SKILLS: Rejected due to technical skills assessment\n' +
       '  * ENGLISH: Rejected due to English language proficiency\n' +
