@@ -151,7 +151,14 @@ export class VacanciesController {
       '- HR: HR interview stage\n' +
       '- TEST: Technical test stage\n' +
       '- TECH: Technical interview stage\n' +
-      '- REJECT: Requires rejectReason field (SoftSkills, TechSkills, English, experience, stopped, no_answer, other)\n' +
+      '- REJECT: Requires rejectReason field with one of the following values:\n' +
+      '  * SOFT_SKILLS: Rejected due to soft skills assessment\n' +
+      '  * TECH_SKILLS: Rejected due to technical skills assessment\n' +
+      '  * ENGLISH: Rejected due to English language proficiency\n' +
+      '  * EXPERIENCE: Rejected due to insufficient experience\n' +
+      '  * STOPPED: Application process stopped\n' +
+      '  * NO_ANSWER: No response received from candidate\n' +
+      '  * OTHER: Other rejection reasons\n' +
       '- OFFER: Final stage when job offer is received\n\n' +
       'Note: rejectReason is only allowed when status is REJECT, and resumeId is only allowed when status is RESUME'
   })
@@ -180,14 +187,21 @@ export class VacanciesController {
 
   @Patch(':vacancyId/status/:statusId')
   @ApiOperation({
-    summary: 'Update a vacancy status',
-    description: 'Updates a specific status of a vacancy. Status transitions follow specific rules:\n\n' +
+    summary: 'Create a new vacancy status',
+    description: 'Creates a new status for a vacancy. Status transitions follow specific rules:\n\n' +
       '- SAVED: Initial status when vacancy is saved\n' +
       '- RESUME: Requires resumeId field to be provided\n' +
       '- HR: HR interview stage\n' +
       '- TEST: Technical test stage\n' +
       '- TECH: Technical interview stage\n' +
-      '- REJECT: Requires rejectReason field (SoftSkills, TechSkills, English, experience, stopped, no_answer, other)\n' +
+      '- REJECT: Requires rejectReason field with one of the following values:\n' +
+      '  * SOFT_SKILLS: Rejected due to soft skills assessment\n' +
+      '  * TECH_SKILLS: Rejected due to technical skills assessment\n' +
+      '  * ENGLISH: Rejected due to English language proficiency\n' +
+      '  * EXPERIENCE: Rejected due to insufficient experience\n' +
+      '  * STOPPED: Application process stopped\n' +
+      '  * NO_ANSWER: No response received from candidate\n' +
+      '  * OTHER: Other rejection reasons\n' +
       '- OFFER: Final stage when job offer is received\n\n' +
       'Note: rejectReason is only allowed when status is REJECT, and resumeId is only allowed when status is RESUME'
   })
