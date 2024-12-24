@@ -15,7 +15,7 @@ export class UpdateVacancyStatusDto {
     enum: RejectReason,
     description: 'Reason for rejection. Required and only allowed when status is "REJECT"',
     required: false,
-    example: RejectReason.SOFT_SKILLS
+    example: RejectReason.SOFT_SKILLS.toUpperCase()
   })
   @IsEnum(RejectReason)
   @IsOptional()
