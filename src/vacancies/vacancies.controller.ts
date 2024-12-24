@@ -144,8 +144,16 @@ export class VacanciesController {
 
   @Post(':vacancyId/status')
   @ApiOperation({
-    summary: 'Create a status for a vacancy',
-    description: 'Creates a new status for a vacancy if it belongs to the authenticated user'
+    summary: 'Create a new vacancy status',
+    description: 'Creates a new status for a vacancy. Status transitions follow specific rules:\n\n' +
+      '- SAVED: Initial status when vacancy is saved\n' +
+      '- RESUME: Requires resumeId field to be provided\n' +
+      '- HR: HR interview stage\n' +
+      '- TEST: Technical test stage\n' +
+      '- TECH: Technical interview stage\n' +
+      '- REJECT: Requires rejectReason field (SoftSkills, TechSkills, English, experience, stopped, no_answer, other)\n' +
+      '- OFFER: Final stage when job offer is received\n\n' +
+      'Note: rejectReason is only allowed when status is REJECT, and resumeId is only allowed when status is RESUME'
   })
   @ApiResponse({
     status: 201,
@@ -173,7 +181,15 @@ export class VacanciesController {
   @Patch(':vacancyId/status/:statusId')
   @ApiOperation({
     summary: 'Update a vacancy status',
-    description: 'Updates a specific status of a vacancy. The status ID is provided in the URL.'
+    description: 'Updates a specific status of a vacancy. Status transitions follow specific rules:\n\n' +
+      '- SAVED: Initial status when vacancy is saved\n' +
+      '- RESUME: Requires resumeId field to be provided\n' +
+      '- HR: HR interview stage\n' +
+      '- TEST: Technical test stage\n' +
+      '- TECH: Technical interview stage\n' +
+      '- REJECT: Requires rejectReason field (SoftSkills, TechSkills, English, experience, stopped, no_answer, other)\n' +
+      '- OFFER: Final stage when job offer is received\n\n' +
+      'Note: rejectReason is only allowed when status is REJECT, and resumeId is only allowed when status is RESUME'
   })
   @ApiResponse({
     status: HttpStatus.OK,
