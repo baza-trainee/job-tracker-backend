@@ -178,9 +178,21 @@ export class VacanciesService {
           throw new BadRequestException('Reject reason is required for reject status');
         }
       } else {
-        // If status is not REJECT, make sure reject_reason is not provided
+        // If status is not REJECT, make sure rejectReason is not provided
         if (updateStatusDto.rejectReason) {
           throw new BadRequestException('Reject reason can only be provided for reject status');
+        }
+      }
+
+      // Validate resume for RESUME status
+      if (updateStatusDto.name === StatusName.RESUME) {
+        if (!updateStatusDto.resumeId) {
+          throw new BadRequestException('Resume ID is required for resume status');
+        }
+      } else {
+        // If status is not RESUME, make sure resumeId is not provided
+        if (updateStatusDto.resumeId) {
+          throw new BadRequestException('Resume ID can only be provided for resume status');
         }
       }
 
@@ -225,9 +237,21 @@ export class VacanciesService {
           throw new BadRequestException('Reject reason is required for reject status');
         }
       } else {
-        // If status is not REJECT, make sure reject_reason is not provided
+        // If status is not REJECT, make sure rejectReason is not provided
         if (updateStatusDto.rejectReason) {
           throw new BadRequestException('Reject reason can only be provided for reject status');
+        }
+      }
+
+      // Validate resume for RESUME status
+      if (updateStatusDto.name === StatusName.RESUME) {
+        if (!updateStatusDto.resumeId) {
+          throw new BadRequestException('Resume ID is required for resume status');
+        }
+      } else {
+        // If status is not RESUME, make sure resumeId is not provided
+        if (updateStatusDto.resumeId) {
+          throw new BadRequestException('Resume ID can only be provided for resume status');
         }
       }
 

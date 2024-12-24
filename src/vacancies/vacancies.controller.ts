@@ -7,6 +7,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Vacancy } from './entities/vacancy.entity';
 import { UUIDValidationPipe } from '../common/pipes/uuid-validation.pipe';
 import { UpdateVacancyStatusDto } from './dto/update-vacancy-status.dto';
+import { RejectReason } from '../vacancy-status/entities/vacancy-status.entity';
 
 @ApiTags('Vacancies')
 @ApiBearerAuth('access-token')
@@ -151,7 +152,14 @@ export class VacanciesController {
       '- HR: HR interview stage\n' +
       '- TEST: Technical test stage\n' +
       '- TECH: Technical interview stage\n' +
-      '- REJECT: Requires rejectReason field (SoftSkills, TechSkills, English, experience, stopped, no_answer, other)\n' +
+      '- REJECT: Requires rejectReason field with one of the following values:\n' +
+      '  * SOFT_SKILLS: Rejected due to soft skills assessment\n' +
+      '  * TECH_SKILLS: Rejected due to technical skills assessment\n' +
+      '  * ENGLISH: Rejected due to English language proficiency\n' +
+      '  * EXPERIENCE: Rejected due to insufficient experience\n' +
+      '  * STOPPED: Application process stopped\n' +
+      '  * NO_ANSWER: No response received from candidate\n' +
+      '  * OTHER: Other rejection reasons\n' +
       '- OFFER: Final stage when job offer is received\n\n' +
       'Note: rejectReason is only allowed when status is REJECT, and resumeId is only allowed when status is RESUME'
   })
@@ -187,7 +195,14 @@ export class VacanciesController {
       '- HR: HR interview stage\n' +
       '- TEST: Technical test stage\n' +
       '- TECH: Technical interview stage\n' +
-      '- REJECT: Requires rejectReason field (SoftSkills, TechSkills, English, experience, stopped, no_answer, other)\n' +
+      '- REJECT: Requires rejectReason field with one of the following values:\n' +
+      `  * ${RejectReason.SOFT_SKILLS}: Rejected due to soft skills assessment\n` +
+      `  * ${RejectReason.TECH_SKILLS}: Rejected due to technical skills assessment\n` +
+      `  * ${RejectReason.ENGLISH}: Rejected due to English language proficiency\n` +
+      `  * ${RejectReason.EXPERIENCE}: Rejected due to insufficient experience\n` +
+      `  * ${RejectReason.STOPPED}: Application process stopped\n` +
+      `  * ${RejectReason.NO_ANSWER}: No response received from candidate\n` +
+      `  * ${RejectReason.OTHER}: Other rejection reasons\n` +
       '- OFFER: Final stage when job offer is received\n\n' +
       'Note: rejectReason is only allowed when status is REJECT, and resumeId is only allowed when status is RESUME'
   })
