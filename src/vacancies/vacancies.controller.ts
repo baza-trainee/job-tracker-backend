@@ -151,7 +151,14 @@ export class VacanciesController {
       '- HR: HR interview stage\n' +
       '- TEST: Technical test stage\n' +
       '- TECH: Technical interview stage\n' +
-      '- REJECT: Requires rejectReason field (SoftSkills, TechSkills, English, experience, stopped, no_answer, other)\n' +
+      '- REJECT: Requires rejectReason field with one of the following values:\n' +
+      '  * SoftSkills: Rejected due to soft skills assessment\n' +
+      '  * TechSkills: Rejected due to technical skills assessment\n' +
+      '  * English: Rejected due to English language proficiency\n' +
+      '  * experience: Rejected due to insufficient experience\n' +
+      '  * stoped: Application process stopped\n' +
+      '  * no_answer: No response received from candidate\n' +
+      '  * other: Other rejection reasons\n' +
       '- OFFER: Final stage when job offer is received\n\n' +
       'Note: rejectReason is only allowed when status is REJECT, and resumeId is only allowed when status is RESUME'
   })
@@ -187,7 +194,14 @@ export class VacanciesController {
       '- HR: HR interview stage\n' +
       '- TEST: Technical test stage\n' +
       '- TECH: Technical interview stage\n' +
-      '- REJECT: Requires rejectReason field (SoftSkills, TechSkills, English, experience, stopped, no_answer, other)\n' +
+      '- REJECT: Requires rejectReason field with one of the following values:\n' +
+      '  * SoftSkills: Rejected due to soft skills assessment\n' +
+      '  * TechSkills: Rejected due to technical skills assessment\n' +
+      '  * English: Rejected due to English language proficiency\n' +
+      '  * experience: Rejected due to insufficient experience\n' +
+      '  * stoped: Application process stopped\n' +
+      '  * no_answer: No response received from candidate\n' +
+      '  * other: Other rejection reasons\n' +
       '- OFFER: Final stage when job offer is received\n\n' +
       'Note: rejectReason is only allowed when status is REJECT, and resumeId is only allowed when status is RESUME'
   })
