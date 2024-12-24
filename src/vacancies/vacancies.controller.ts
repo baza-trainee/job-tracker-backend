@@ -172,17 +172,20 @@ export class VacanciesController {
 
   @Patch(':vacancyId/status/:statusId')
   @ApiOperation({
-    summary: 'Update a specific status for a vacancy',
-    description: 'Updates a specific status for a vacancy if it belongs to the authenticated user'
+    summary: 'Update a vacancy status',
+    description: 'Updates a specific status of a vacancy. The status ID is provided in the URL.'
   })
   @ApiResponse({
-    status: 200,
-    description: 'Status successfully updated',
-    type: Vacancy
+    status: HttpStatus.OK,
+    description: 'Status successfully updated'
   })
   @ApiResponse({
-    status: 400,
-    description: 'Invalid UUID format'
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid request data or status validation failed'
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Vacancy or status not found'
   })
   @ApiParam({
     name: 'vacancyId',
@@ -192,7 +195,7 @@ export class VacanciesController {
   })
   @ApiParam({
     name: 'statusId',
-    description: 'Status ID',
+    description: 'Status ID to update',
     type: 'string',
     format: 'uuid'
   })
