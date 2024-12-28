@@ -91,7 +91,7 @@ export class EventsController {
     @Request() req,
     @Body() updateEventDto: UpdateEventDto
   ) {
-    return this.eventsService.update(id, updateEventDto, req.user.id);
+    return this.eventsService.update(id, req.user.id, updateEventDto);
   }
 
   @Delete(':id')

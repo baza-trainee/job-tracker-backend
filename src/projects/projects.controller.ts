@@ -12,7 +12,7 @@ import { UUIDValidationPipe } from '../common/pipes/uuid-validation.pipe';
 @UseGuards(JwtAuthGuard)
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(private readonly projectsService: ProjectsService) { }
 
   @Post()
   @ApiOperation({
@@ -91,7 +91,7 @@ export class ProjectsController {
     @Request() req,
     @Body() updateProjectDto: UpdateProjectDto
   ) {
-    return this.projectsService.update(id, updateProjectDto, req.user.id);
+    return this.projectsService.update(id, req.user.id, updateProjectDto);
   }
 
   @Delete(':id')

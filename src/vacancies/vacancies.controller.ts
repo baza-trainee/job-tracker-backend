@@ -236,7 +236,7 @@ export class VacanciesController {
     @Request() req,
     @Body() updateStatusDto: UpdateVacancyStatusDto
   ) {
-    return this.vacanciesService.updateStatus(vacancyId, statusId, req.user.id, updateStatusDto);
+    return this.vacanciesService.updateStatus(vacancyId, req.user.id, updateStatusDto);
   }
 
   @Delete(':vacancyId/status/:statusId')
