@@ -22,7 +22,7 @@ import { UUIDValidationPipe } from '../common/pipes/uuid-validation.pipe';
 @UseGuards(JwtAuthGuard)
 @Controller('resumes')
 export class ResumeController {
-  constructor(private readonly resumeService: ResumeService) {}
+  constructor(private readonly resumeService: ResumeService) { }
 
   @Post()
   @ApiOperation({
@@ -101,7 +101,7 @@ export class ResumeController {
     @Request() req,
     @Body() updateResumeDto: UpdateResumeDto
   ) {
-    return this.resumeService.update(id, updateResumeDto, req.user.id);
+    return this.resumeService.update(id, req.user.id, updateResumeDto);
   }
 
   @Delete(':id')

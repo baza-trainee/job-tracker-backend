@@ -12,7 +12,7 @@ import { UUIDValidationPipe } from '../common/pipes/uuid-validation.pipe';
 @UseGuards(JwtAuthGuard)
 @Controller('cover-letter')
 export class CoverLetterController {
-  constructor(private readonly coverLetterService: CoverLetterService) {}
+  constructor(private readonly coverLetterService: CoverLetterService) { }
 
   @Post()
   @ApiOperation({

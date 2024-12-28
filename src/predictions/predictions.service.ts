@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, InternalServerErrorException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, MoreThanOrEqual } from 'typeorm';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
@@ -8,6 +8,7 @@ import { PredictionHistory } from './entities/prediction-history.entity';
 import { startOfDay, subDays } from 'date-fns';
 import * as fs from 'fs';
 import * as path from 'path';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class PredictionsService {
@@ -16,98 +17,121 @@ export class PredictionsService {
     private readonly predictionRepository: Repository<Prediction>,
     @InjectRepository(PredictionHistory)
     private readonly historyRepository: Repository<PredictionHistory>,
-  ) {}
+  ) { }
 
-  async create(createPredictionDto: CreatePredictionDto, userId: string): Promise<Prediction> {
+  private sanitizePrediction(prediction: Prediction) {
+    const { user, updatedAt, ...predictionWithoutUser } = prediction;
+    return predictionWithoutUser;
+  }
+
+  async create(createPredictionDto: CreatePredictionDto, userId: string) {
     try {
+      if (!userId) {
+        throw new BadRequestException('Authorization is required');
+      }
       const prediction = this.predictionRepository.create({
         ...createPredictionDto,
         user: { id: userId }
       });
-      const result = await this.predictionRepository.save(prediction);
-      return this.predictionRepository.findOne({ 
-        where: { id: result.id },
+      const savedPrediction = await this.predictionRepository.save(prediction);
+      const result = await this.predictionRepository.findOne({
+        where: { id: savedPrediction.id },
         relations: ['user']
       });
+      return this.sanitizePrediction(result);
     } catch (error) {
-      throw new BadRequestException('Failed to create prediction: ' + error.message);
+      throw new BadRequestException('Failed to create prediction');
     }
   }
 
-  async findAll(userId: string): Promise<Prediction[]> {
+  async findAll(userId: string) {
     try {
-      return this.predictionRepository.find({
-        where: { user: { id: userId } },
+      if (!userId) {
+        throw new BadRequestException('Authorization is required');
+      }
+      const predictions = await this.predictionRepository.find({
         select: {
           id: true,
           textUk: true,
           textEn: true,
-          createdAt: true,
-          updatedAt: true
+          createdAt: true
         },
         order: { createdAt: 'DESC' }
       });
+      return predictions;
     } catch (error) {
-      throw new InternalServerErrorException('Failed to fetch predictions: ' + error.message);
+      throw new InternalServerErrorException('Failed to fetch predictions');
     }
   }
 
-  async findOne(id: string, userId: string): Promise<Prediction> {
+  async update(id: string, userId: string, updatePredictionDto: UpdatePredictionDto) {
     try {
+      if (!userId) {
+        throw new BadRequestException('Authorization is required');
+      }
+
       const prediction = await this.predictionRepository.findOne({
-        where: { id, user: { id: userId } },
-        select: {
-          id: true,
-          textUk: true,
-          textEn: true,
-          createdAt: true,
-          updatedAt: true
-        }
+        where: { id },
+        relations: { user: true },
       });
 
       if (!prediction) {
-        throw new NotFoundException(`Prediction with ID ${id} not found or doesn't belong to the user`);
+        throw new NotFoundException('Prediction not found');
+      }
+      // Check if the update DTO is empty (no fields provided)
+      if (Object.keys(updatePredictionDto).length === 0) {
+        throw new BadRequestException('At least one field must be provided for update');
       }
 
-      return prediction;
+      // Check if all provided fields are empty strings
+      const hasNonEmptyField = Object.values(updatePredictionDto).some(
+        value => value !== undefined && value !== '',
+      );
+
+      if (!hasNonEmptyField) {
+        throw new BadRequestException('At least one field must have a non-empty value');
+      }
+
+      Object.assign(prediction, updatePredictionDto);
+      const savedPrediction = await this.predictionRepository.save(prediction);
+      const { user, updatedAt, ...predictionWithoutUser } = savedPrediction;
+      return predictionWithoutUser;
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to fetch prediction: ' + error.message);
+      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to update prediction');
     }
   }
 
-  async update(id: string, updatePredictionDto: UpdatePredictionDto, userId: string): Promise<Prediction> {
+  async remove(id: string, userId: string) {
     try {
-      const prediction = await this.findOne(id, userId);
-      const updated = await this.predictionRepository.save({
-        ...prediction,
-        ...updatePredictionDto,
-        user: { id: userId }
-      });
-      return this.predictionRepository.findOne({ 
-        where: { id: updated.id },
-        relations: ['user']
-      });
-    } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new BadRequestException('Failed to update prediction: ' + error.message);
-    }
-  }
+      if (!userId) {
+        throw new BadRequestException('Authorization is required');
+      }
 
-  async remove(id: string, userId: string): Promise<void> {
-    try {
-      const prediction = await this.findOne(id, userId);
+      const prediction = await this.predictionRepository.findOne({
+        where: { id },
+      });
+
+      if (!prediction) {
+        throw new NotFoundException('Prediction not found');
+      }
+
       await this.predictionRepository.remove(prediction);
+      return { message: 'Prediction successfully deleted' };
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to delete prediction: ' + error.message);
+      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ForbiddenException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to delete prediction');
     }
   }
 
-  async seed(userId: string): Promise<{ count: number }> {
+  async seed(user: User) {
     try {
       const filePath = path.join(process.cwd(), 'src', 'predictions', 'data', 'predictions.json');
-      
+
       if (!fs.existsSync(filePath)) {
         throw new NotFoundException('Predictions data file not found');
       }
@@ -121,21 +145,26 @@ export class PredictionsService {
 
       const predictions = data.predictions.map(prediction => ({
         ...prediction,
-        user: { id: userId }
+        user
       }));
 
       const result = await this.predictionRepository.save(predictions);
-      return { count: result.length };
+      return {
+        count: result.length,
+        message: 'Predictions successfully seeded'
+      };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException('Failed to seed predictions: ' + error.message);
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to seed predictions');
     }
   }
 
-  async getDailyPrediction(userId: string): Promise<Prediction> {
+  async getDailyPrediction(userId: string) {
     try {
       const today = startOfDay(new Date());
-      
+
       // Check if user already has a prediction for today
       const todayPrediction = await this.historyRepository.findOne({
         where: {
@@ -146,7 +175,7 @@ export class PredictionsService {
       });
 
       if (todayPrediction) {
-        return todayPrediction.prediction;
+        return this.sanitizePrediction(todayPrediction.prediction);
       }
 
       // Get predictions shown in the last 90 days
@@ -163,7 +192,7 @@ export class PredictionsService {
 
       // Get a random prediction that wasn't shown in the last 90 days
       let query = this.predictionRepository.createQueryBuilder('prediction');
-      
+
       if (recentPredictionIds.length > 0) {
         query = query.where('prediction.id NOT IN (:...recentIds)', { recentIds: recentPredictionIds });
       }
@@ -177,7 +206,7 @@ export class PredictionsService {
           order: { shownAt: 'ASC' },
           take: 90
         });
-        
+
         if (oldestHistory.length > 0) {
           await this.historyRepository.remove(oldestHistory);
           return this.getDailyPrediction(userId);
@@ -196,14 +225,16 @@ export class PredictionsService {
       // Save to history
       const history = this.historyRepository.create({
         user: { id: userId },
-        prediction: prediction
+        prediction
       });
       await this.historyRepository.save(history);
 
-      return prediction;
+      return this.sanitizePrediction(prediction);
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
-      throw new InternalServerErrorException('Failed to get daily prediction: ' + error.message);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to get daily prediction');
     }
   }
 }

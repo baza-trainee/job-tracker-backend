@@ -73,55 +73,19 @@ export class PredictionsController {
     return this.predictionsService.findAll(req.user.id);
   }
 
-  @Get(':id')
-  @ApiOperation({
-    summary: 'Get a specific prediction',
-    description: 'Returns a specific prediction by ID if it belongs to the authenticated user'
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Returns the prediction',
-    type: Prediction
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Prediction not found'
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized - valid JWT token required'
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'Prediction ID',
-    type: 'string',
-    format: 'uuid'
-  })
-  findOne(@Param('id', UUIDValidationPipe) id: string, @Request() req) {
-    return this.predictionsService.findOne(id, req.user.id);
-  }
-
   @Patch(':id')
   @ApiOperation({
     summary: 'Update a prediction',
     description: 'Updates a prediction if it belongs to the authenticated user'
   })
   @ApiResponse({
-    status: HttpStatus.OK,
+    status: 200,
     description: 'Prediction successfully updated',
     type: Prediction
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Prediction not found'
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Invalid input data provided'
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Unauthorized - valid JWT token required'
+    status: 400,
+    description: 'Invalid UUID format'
   })
   @ApiParam({
     name: 'id',
@@ -134,7 +98,7 @@ export class PredictionsController {
     @Request() req,
     @Body() updatePredictionDto: UpdatePredictionDto,
   ) {
-    return this.predictionsService.update(id, updatePredictionDto, req.user.id);
+    return this.predictionsService.update(id, req.user.id, updatePredictionDto);
   }
 
   @Post('seed')

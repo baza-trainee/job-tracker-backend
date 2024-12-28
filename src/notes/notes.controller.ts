@@ -101,7 +101,7 @@ export class NotesController {
     @Request() req,
     @Body() updateNoteDto: UpdateNoteDto
   ) {
-    return this.notesService.update(id, updateNoteDto, req.user.id);
+    return this.notesService.update(id, req.user.id, updateNoteDto);
   }
 
   @Delete(':id')

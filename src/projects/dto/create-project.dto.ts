@@ -7,13 +7,23 @@ export class CreateProjectDto {
   @IsString()
   name: string;
 
-  @ApiProperty({ description: 'GitHub repository link' })
+  @ApiProperty({
+    description: 'GitHub repository link',
+    example: 'https://github.com/username/repository'
+  })
   @IsNotEmpty()
-  @IsUrl()
+  @IsUrl({}, {
+    message: 'GitHub link must be a valid URL',
+  })
   githubLink: string;
 
-  @ApiProperty({ description: 'Live project URL' })
+  @ApiProperty({
+    description: 'Live project URL',
+    example: 'https://my-project.com'
+  })
   @IsNotEmpty()
-  @IsUrl()
+  @IsUrl({}, {
+    message: 'Live project link must be a valid URL',
+  })
   liveProjectLink: string;
 }

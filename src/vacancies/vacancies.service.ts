@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { CreateVacancyDto } from './dto/create-vacancy.dto';
 import { UpdateVacancyDto } from './dto/update-vacancy.dto';
 import { UpdateVacancyStatusDto } from './dto/update-vacancy-status.dto';
@@ -6,8 +6,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vacancy } from './entities/vacancy.entity';
 import { User } from '../user/entities/user.entity';
-import { VacancyStatusService } from '../vacancy-status/vacancy-status.service';
 import { StatusName } from '../vacancy-status/entities/vacancy-status.entity';
+import { Resume } from '../resume/entities/resume.entity';
+import { VacancyStatusService } from '../vacancy-status/vacancy-status.service';
 
 @Injectable()
 export class VacanciesService {
@@ -16,6 +17,8 @@ export class VacanciesService {
     private readonly vacancyRepository: Repository<Vacancy>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Resume)
+    private readonly resumeRepository: Repository<Resume>,
     private readonly vacancyStatusService: VacancyStatusService,
   ) { }
 
@@ -117,7 +120,7 @@ export class VacanciesService {
     try {
       const vacancy = await this.vacancyRepository.findOne({
         where: { id },
-        relations: ['user']
+        relations: { user: true },
       });
 
       if (!vacancy) {
@@ -128,14 +131,41 @@ export class VacanciesService {
         throw new ForbiddenException('You can only update your own vacancies');
       }
 
+      // Check if the update DTO is empty (no fields provided)
+      if (Object.keys(updateVacancyDto).length === 0) {
+        throw new BadRequestException('At least one field must be provided for update');
+      }
+
+      // Check if all provided fields are empty strings
+      const hasNonEmptyField = Object.values(updateVacancyDto).some(
+        value => value !== undefined && value !== '',
+      );
+
+      if (!hasNonEmptyField) {
+        throw new BadRequestException('At least one field must have a non-empty value');
+      }
+
+      // Validate link if provided
+      if (updateVacancyDto.link) {
+        try {
+          const url = new URL(updateVacancyDto.link);
+          if (!['http:', 'https:'].includes(url.protocol)) {
+            throw new BadRequestException('Invalid link format - must be http or https');
+          }
+        } catch {
+          throw new BadRequestException('Invalid link format');
+        }
+      }
+
       Object.assign(vacancy, updateVacancyDto);
-      const updatedVacancy = await this.vacancyRepository.save(vacancy);
-      return this.sanitizeVacancy(updatedVacancy);
+      const savedVacancy = await this.vacancyRepository.save(vacancy);
+      const { user, ...vacancyWithoutUser } = savedVacancy;
+      return vacancyWithoutUser;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ForbiddenException) {
         throw error;
       }
-      throw new BadRequestException('Invalid request');
+      throw new InternalServerErrorException('Failed to update vacancy');
     }
   }
 
@@ -214,66 +244,68 @@ export class VacanciesService {
     }
   }
 
-  async updateStatus(vacancyId: string, statusId: string, userId: string, updateStatusDto: UpdateVacancyStatusDto) {
+  async updateStatus(id: string, userId: string, updateVacancyStatusDto: UpdateVacancyStatusDto) {
     try {
       const vacancy = await this.vacancyRepository.findOne({
-        where: { id: vacancyId, user: { id: userId } },
-        relations: ['statuses'],
+        where: { id },
+        relations: { user: true },
       });
 
       if (!vacancy) {
         throw new NotFoundException('Vacancy not found');
       }
 
-      // Find the specific status
-      const status = vacancy.statuses.find(s => s.id === statusId);
-      if (!status) {
-        throw new NotFoundException('Status not found');
+      if (vacancy.user.id !== userId) {
+        throw new ForbiddenException('You can only update status of your own vacancies');
       }
 
-      // Validate status data based on status name
-      if (updateStatusDto.name === StatusName.REJECT) {
-        if (!updateStatusDto.rejectReason) {
-          throw new BadRequestException('Reject reason is required for reject status');
-        }
-      } else {
-        // If status is not REJECT, make sure rejectReason is not provided
-        if (updateStatusDto.rejectReason) {
-          throw new BadRequestException('Reject reason can only be provided for reject status');
+      // Check if the update DTO is empty (no fields provided)
+      if (Object.keys(updateVacancyStatusDto).length === 0) {
+        throw new BadRequestException('At least one field must be provided for update');
+      }
+
+      // Check if all provided fields are empty strings or null
+      const hasNonEmptyField = Object.values(updateVacancyStatusDto).some(
+        value => value !== undefined && value !== '' && value !== null,
+      );
+
+      if (!hasNonEmptyField) {
+        throw new BadRequestException('At least one field must have a non-empty value');
+      }
+
+      // Special validation for REJECT status
+      if (updateVacancyStatusDto.name === StatusName.REJECT && !updateVacancyStatusDto.rejectReason) {
+        throw new BadRequestException('Reject reason is required when status is REJECT');
+      }
+
+      // Special validation for RESUME status
+      if (updateVacancyStatusDto.name === StatusName.RESUME && !updateVacancyStatusDto.resumeId) {
+        throw new BadRequestException('Resume ID is required when status is RESUME');
+      }
+
+      // If resumeId is provided, verify it exists and belongs to the user
+      if (updateVacancyStatusDto.resumeId) {
+        const resume = await this.resumeRepository.findOne({
+          where: { 
+            id: updateVacancyStatusDto.resumeId,
+            user: { id: userId }
+          }
+        });
+
+        if (!resume) {
+          throw new NotFoundException('Resume not found or does not belong to you');
         }
       }
 
-      // Validate resume for RESUME status
-      if (updateStatusDto.name === StatusName.RESUME) {
-        if (!updateStatusDto.resumeId) {
-          throw new BadRequestException('Resume ID is required for resume status');
-        }
-      } else {
-        // If status is not RESUME, make sure resumeId is not provided
-        if (updateStatusDto.resumeId) {
-          throw new BadRequestException('Resume ID can only be provided for resume status');
-        }
-      }
-
-      // Update the status
-      await this.vacancyStatusService.updateStatus(status.id, updateStatusDto);
-
-      // Fetch updated vacancy with all statuses
-      const updatedVacancy = await this.vacancyRepository.findOne({
-        where: { id: vacancyId },
-        relations: ['statuses'],
-      });
-
-      if (!updatedVacancy) {
-        throw new NotFoundException('Vacancy not found after update');
-      }
-
-      return this.sanitizeVacancy(updatedVacancy);
+      Object.assign(vacancy, { status: updateVacancyStatusDto });
+      const savedVacancy = await this.vacancyRepository.save(vacancy);
+      const { user, ...vacancyWithoutUser } = savedVacancy;
+      return vacancyWithoutUser;
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ForbiddenException) {
         throw error;
       }
-      throw new BadRequestException('Failed to update status');
+      throw new InternalServerErrorException('Failed to update vacancy status');
     }
   }
 
