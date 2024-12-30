@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { VacancyStatus, StatusName } from './entities/vacancy-status.entity';
 import { Vacancy } from '../vacancies/entities/vacancy.entity';
 import { NotFoundException } from '@nestjs/common';
+import { UpdateVacancyStatusDto } from '../vacancies/dto/update-vacancy-status.dto';
 
 @Injectable()
 export class VacancyStatusService {
@@ -21,7 +22,7 @@ export class VacancyStatusService {
     return this.vacancyStatusRepository.save(status);
   }
 
-  async createStatus(vacancy: Vacancy, statusData: Partial<VacancyStatus>) {
+  async createStatus(vacancy: Vacancy, statusData: UpdateVacancyStatusDto) {
     try {
       if (statusData.name === StatusName.RESUME && !statusData.resumeId) {
         throw new BadRequestException('Resume ID is required for resume status');
@@ -29,6 +30,7 @@ export class VacancyStatusService {
 
       const status = this.vacancyStatusRepository.create({
         ...statusData,
+        date: statusData.date ? new Date(statusData.date) : new Date(),
         vacancy,
       });
 
@@ -41,7 +43,7 @@ export class VacancyStatusService {
     }
   }
 
-  async updateStatus(statusId: string, updateStatusDto: any) {
+  async updateStatus(statusId: string, updateStatusDto: UpdateVacancyStatusDto) {
     try {
       const status = await this.vacancyStatusRepository.findOne({
         where: { id: statusId }
@@ -59,6 +61,7 @@ export class VacancyStatusService {
         name: updateStatusDto.name,
         ...(updateStatusDto.rejectReason && { rejectReason: updateStatusDto.rejectReason }),
         ...(updateStatusDto.resumeId && { resumeId: updateStatusDto.resumeId }),
+        ...(updateStatusDto.date && { date: new Date(updateStatusDto.date) }),
         // Clear resumeId if status is changing from RESUME to something else
         ...(status.name === StatusName.RESUME && updateStatusDto.name !== StatusName.RESUME && { resumeId: null }),
         // Clear rejectReason if status is changing from REJECT to something else
