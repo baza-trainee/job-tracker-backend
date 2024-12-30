@@ -41,7 +41,7 @@ export class VacancyStatus {
   })
   name: StatusName;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp with time zone', default: () => 'CURRENT_TIMESTAMP' })
   date: Date;
 
   @Column({

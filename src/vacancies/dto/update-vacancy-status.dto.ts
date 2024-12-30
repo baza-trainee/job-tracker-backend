@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateIf } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, ValidateIf, IsDateString } from 'class-validator';
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { StatusName, RejectReason } from '../../vacancy-status/entities/vacancy-status.entity';
 
@@ -36,4 +36,13 @@ export class UpdateVacancyStatusDto {
   @IsNotEmpty({ message: 'At least one field must be provided and not empty' })
   @IsUUID()
   resumeId?: string;
+
+  @ApiProperty({
+    description: 'Custom date for the status. If not provided, current date will be used. Accepts standard JavaScript date string formats',
+    required: false,
+    example: '2024-12-30'  // Simple date format example
+  })
+  @IsOptional()
+  @IsDateString()  // More flexible than IsISO8601, accepts various date string formats
+  date?: string;
 }
