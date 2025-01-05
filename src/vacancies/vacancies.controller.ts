@@ -14,7 +14,7 @@ import { RejectReason } from '../vacancy-status/entities/vacancy-status.entity';
 @UseGuards(JwtAuthGuard)
 @Controller('vacancies')
 export class VacanciesController {
-  constructor(private readonly vacanciesService: VacanciesService) {}
+  constructor(private readonly vacanciesService: VacanciesService) { }
 
   @Post()
   @ApiOperation({
@@ -236,7 +236,7 @@ export class VacanciesController {
     @Request() req,
     @Body() updateStatusDto: UpdateVacancyStatusDto
   ) {
-    return this.vacanciesService.updateStatus(vacancyId, req.user.id, updateStatusDto);
+    return this.vacanciesService.updateStatus(vacancyId, req.user.id, updateStatusDto, statusId);
   }
 
   @Delete(':vacancyId/status/:statusId')

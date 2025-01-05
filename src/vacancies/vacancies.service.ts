@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Vacancy } from './entities/vacancy.entity';
 import { User } from '../user/entities/user.entity';
 import { StatusName } from '../vacancy-status/entities/vacancy-status.entity';
+import { RejectReason } from '../vacancy-status/entities/vacancy-status.entity';
 import { Resume } from '../resume/entities/resume.entity';
 import { VacancyStatusService } from '../vacancy-status/vacancy-status.service';
 
@@ -244,11 +245,12 @@ export class VacanciesService {
     }
   }
 
-  async updateStatus(id: string, userId: string, updateVacancyStatusDto: UpdateVacancyStatusDto) {
+
+  async updateStatus(id: string, userId: string, updateVacancyStatusDto: UpdateVacancyStatusDto, statusId: string) {
     try {
       const vacancy = await this.vacancyRepository.findOne({
         where: { id },
-        relations: { user: true },
+        relations: { user: true, statuses: true },
       });
 
       if (!vacancy) {
@@ -274,8 +276,18 @@ export class VacanciesService {
       }
 
       // Special validation for REJECT status
-      if (updateVacancyStatusDto.name === StatusName.REJECT && !updateVacancyStatusDto.rejectReason) {
-        throw new BadRequestException('Reject reason is required when status is REJECT');
+      if (updateVacancyStatusDto.name === StatusName.REJECT) {
+        if (!updateVacancyStatusDto.rejectReason) {
+          throw new BadRequestException('Reject reason is required when status is REJECT');
+        }
+        if (!Object.values(RejectReason).includes(updateVacancyStatusDto.rejectReason)) {
+          throw new BadRequestException(`reject reason must be one of: ${Object.values(RejectReason).join(', ')}`);
+        }
+      } else {
+        // If status is not REJECT, make sure rejectReason is not provided
+        if (updateVacancyStatusDto.rejectReason) {
+          throw new BadRequestException('Reject reason can only be provided for reject status');
+        }
       }
 
       // Special validation for RESUME status
@@ -286,7 +298,7 @@ export class VacanciesService {
       // If resumeId is provided, verify it exists and belongs to the user
       if (updateVacancyStatusDto.resumeId) {
         const resume = await this.resumeRepository.findOne({
-          where: { 
+          where: {
             id: updateVacancyStatusDto.resumeId,
             user: { id: userId }
           }
@@ -297,9 +309,27 @@ export class VacanciesService {
         }
       }
 
-      Object.assign(vacancy, { status: updateVacancyStatusDto });
-      const savedVacancy = await this.vacancyRepository.save(vacancy);
-      const { user, ...vacancyWithoutUser } = savedVacancy;
+      // Find the specific status to update
+      const statusToUpdate = vacancy.statuses.find(s => s.id === statusId);
+      if (!statusToUpdate) {
+        throw new NotFoundException('Status not found');
+      }
+
+      // Update the status using vacancyStatusService
+      await this.vacancyStatusService.updateStatus(statusId, updateVacancyStatusDto);
+
+      // Fetch the updated vacancy with all statuses
+      const updatedVacancy = await this.vacancyRepository.findOne({
+        where: { id },
+        relations: ['statuses'],
+        order: {
+          statuses: {
+            date: 'DESC'
+          }
+        }
+      });
+
+      const { user: _, ...vacancyWithoutUser } = updatedVacancy;
       return vacancyWithoutUser;
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ForbiddenException) {
