@@ -18,12 +18,14 @@ export class UpdateVacancyStatusDto {
     enum: RejectReason,
     description: 'Reason for rejection. Required and only allowed when status is "REJECT"',
     required: false,
-    example: RejectReason.SOFT_SKILLS.toUpperCase()
+    example: RejectReason.SOFT_SKILLS
   })
   @IsOptional()
   @ValidateIf((o) => !o.name && !o.resumeId)
   @IsNotEmpty({ message: 'At least one field must be provided and not empty' })
-  @IsEnum(RejectReason)
+  @IsEnum(RejectReason, {
+    message: `reject reason must be one of: ${Object.values(RejectReason).join(', ')}`
+  })
   rejectReason?: RejectReason;
 
   @ApiProperty({

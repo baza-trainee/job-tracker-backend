@@ -8,4 +8,4 @@ import { VacancyStatus } from './entities/vacancy-status.entity';
   providers: [VacancyStatusService],
   exports: [VacancyStatusService],
 })
-export class VacancyStatusModule {}
+export class VacancyStatusModule { }
