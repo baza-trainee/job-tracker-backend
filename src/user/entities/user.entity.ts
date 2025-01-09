@@ -47,27 +47,27 @@ export class User {
   googleId: string;
 
   @ApiProperty({ type: () => [Vacancy], description: 'User vacancies' })
-  @OneToMany(() => Vacancy, (vacancy) => vacancy.user)
+  @OneToMany(() => Vacancy, (vacancy) => vacancy.user, { onDelete: 'CASCADE' })
   vacancies: Vacancy[];
 
-  @OneToMany(() => Resume, (resume) => resume.user)
+  @OneToMany(() => Resume, (resume) => resume.user, { onDelete: 'CASCADE' })
   resumes: Resume[];
 
-  @OneToMany(() => CoverLetter, (coverLetter) => coverLetter.user)
+  @OneToMany(() => CoverLetter, (coverLetter) => coverLetter.user, { onDelete: 'CASCADE' })
   coverLetters: CoverLetter[];
 
-  @OneToMany(() => Project, (project) => project.user)
+  @OneToMany(() => Project, (project) => project.user, { onDelete: 'CASCADE' })
   projects: Project[];
 
   @ApiProperty({ type: () => [Note], description: 'User notes' })
-  @OneToMany(() => Note, (note) => note.user)
+  @OneToMany(() => Note, (note) => note.user, { onDelete: 'CASCADE' })
   notes: Note[];
 
   @ApiProperty({ type: () => [Event], description: 'User events' })
-  @OneToMany(() => Event, (event) => event.user)
+  @OneToMany(() => Event, (event) => event.user, { onDelete: 'CASCADE' })
   events: Event[];
 
-  @OneToMany(() => Prediction, (prediction) => prediction.user)
+  @OneToMany(() => Prediction, (prediction) => prediction.user, { onDelete: 'CASCADE' })
   predictions: Prediction[];
 
   @CreateDateColumn()

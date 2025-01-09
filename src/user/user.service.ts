@@ -244,4 +244,47 @@ export class UserService {
       );
     }
   }
+
+  async deleteUser(userId: string): Promise<any> {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+        relations: [
+          'vacancies',
+          'resumes',
+          'coverLetters',
+          'projects',
+          'notes',
+          'events',
+          'predictions'
+        ]
+      });
+
+      if (!user) {
+        throw new HttpException(
+          'No account found with this ID',
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      await this.userRepository.remove(user);
+
+      return {
+        message: 'User and all related data successfully deleted',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to delete user',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 }
