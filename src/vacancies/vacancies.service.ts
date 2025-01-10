@@ -35,6 +35,16 @@ export class VacanciesService {
         throw new NotFoundException('User not found');
       }
 
+      // Validate URL format for link
+      try {
+        const url = new URL(createVacancyDto.link);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          throw new BadRequestException('Invalid URL format for vacancy link');
+        }
+      } catch (error) {
+        throw new BadRequestException('Invalid URL format for vacancy link');
+      }
+
       const vacancy = this.vacancyRepository.create({
         ...createVacancyDto,
         user
@@ -47,10 +57,10 @@ export class VacanciesService {
 
       return this.sanitizeVacancy(savedVacancy);
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException('Invalid request');
+      throw new BadRequestException('Failed to create vacancy');
     }
   }
 

@@ -50,6 +50,9 @@ export class ProjectsService {
       const savedProject = await this.projectRepository.save(project);
       return this.sanitizeProject(savedProject);
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       if (error?.code === '23505') {
         throw new BadRequestException('A project with this name already exists');
       }
