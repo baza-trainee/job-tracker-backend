@@ -312,13 +312,10 @@ export class AuthService {
       const access_token = (await this.generateTokens(user)).access_token
       return { access_token }
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
+      if (error?.name === 'TokenExpiredError' || error?.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Invalid or expired refresh token');
       }
-      throw new HttpException(
-        'Failed to refresh tokens',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw new UnauthorizedException('Failed to refresh tokens');
     }
   }
 
