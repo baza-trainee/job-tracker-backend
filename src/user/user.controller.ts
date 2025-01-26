@@ -35,6 +35,18 @@ export class UserController {
     return this.userService.getProfile({ ...req.user });
   }
 
+  @Patch('update')
+  @ApiOperation({ summary: 'Update user profile' })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiResponse({ status: 200, description: 'User profile updated successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @UsePipes(new ValidationPipe())
+  updateUser(@Req() req, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.updateUser(req.user.id, updateUserDto);
+  }
+
   @Post('change-password')
   @HttpCode(HttpStatus.OK)
   @ApiResponse({ status: 200, description: 'Password successfully changed' })

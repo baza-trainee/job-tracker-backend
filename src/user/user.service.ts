@@ -13,6 +13,11 @@ export class UserService {
       'user.id',
       'user.email',
       'user.username',
+      'user.phone',
+      'user.telegram',
+      'user.github',
+      'user.linkedin',
+      'user.behance',
       'user.createdAt',
     ],
     vacancy: [
