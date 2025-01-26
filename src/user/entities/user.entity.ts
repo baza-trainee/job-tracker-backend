@@ -28,6 +28,21 @@ export class User {
   email: string;
 
   @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true })
+  telegram: string;
+
+  @Column({ nullable: true })
+  github: string;
+
+  @Column({ nullable: true })
+  linkedin: string;
+
+  @Column({ nullable: true })
+  behance: string;
+
+  @Column({ nullable: true })
   password: string;
 
   @ApiProperty({ description: 'User`s reset token' })
