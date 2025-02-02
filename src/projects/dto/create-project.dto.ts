@@ -26,4 +26,14 @@ export class CreateProjectDto {
     message: 'Live project link must be a valid URL',
   })
   liveProjectLink: string;
+
+  @ApiProperty({ description: 'Project technologies' })
+  @IsNotEmpty()
+  @IsString()
+  technologies: string;
+
+  @ApiProperty({ description: 'Project description' })
+  @IsNotEmpty()
+  @IsString()
+  description: string;
 }
