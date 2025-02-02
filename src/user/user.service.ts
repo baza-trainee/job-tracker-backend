@@ -57,8 +57,9 @@ export class UserService {
     project: [
       'projects.id',
       'projects.name',
-      'projects.githubLink',
-      'projects.liveProjectLink',
+      'projects.technologies',
+      'projects.description',
+      'projects.link',
       'projects.createdAt',
       'projects.updatedAt',
     ],
