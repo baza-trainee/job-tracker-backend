@@ -30,17 +30,9 @@ export class User {
   @Column({ nullable: true })
   phone: string;
 
-  @Column({ nullable: true })
-  telegram: string;
-
-  @Column({ nullable: true })
-  github: string;
-
-  @Column({ nullable: true })
-  linkedin: string;
-
-  @Column({ nullable: true })
-  behance: string;
+  @ApiProperty({ description: 'User`s social media links' })
+  @Column('json', { nullable: true })
+  socials: Array<{ id: string; name: string; link: string }>;
 
   @Column({ nullable: true })
   password: string;

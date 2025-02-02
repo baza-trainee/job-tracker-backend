@@ -5,6 +5,9 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { SocialMediaDto } from './dto/social-media.dto';
+import { UpdateSocialMediaDto } from './dto/update-social-media.dto';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UserService {
@@ -14,10 +17,7 @@ export class UserService {
       'user.email',
       'user.username',
       'user.phone',
-      'user.telegram',
-      'user.github',
-      'user.linkedin',
-      'user.behance',
+      'user.socials',
       'user.createdAt',
     ],
     vacancy: [
@@ -169,6 +169,136 @@ export class UserService {
     }
   }
 
+  async addSocialMedia(userId: string, socialMediaDto: SocialMediaDto) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    try {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      if (!user.socials) {
+        user.socials = [];
+      }
+
+      // Always generate a new UUID
+      const newSocialMedia = {
+        ...socialMediaDto,
+        id: uuidv4()
+      };
+
+      user.socials.push(newSocialMedia);
+      await this.userRepository.save(user);
+
+      return {
+        message: 'Social media link added successfully',
+        status: HttpStatus.CREATED,
+        data: {
+          id: newSocialMedia.id,
+          name: newSocialMedia.name,
+          link: newSocialMedia.link
+        }
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to add social media link',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async updateSocialMedia(userId: string, id: string, updateSocialMediaDto: UpdateSocialMediaDto) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    try {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      if (!user.socials) {
+        throw new HttpException('No social media links found', HttpStatus.NOT_FOUND);
+      }
+
+      const socialIndex = user.socials.findIndex(social => social.id === id);
+      if (socialIndex === -1) {
+        throw new HttpException(
+          'Social media link not found',
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      user.socials[socialIndex] = {
+        ...user.socials[socialIndex],
+        ...updateSocialMediaDto
+      };
+
+      await this.userRepository.save(user);
+
+      return {
+        message: 'Social media link updated successfully',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to update social media link',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async deleteSocialMedia(userId: string, id: string) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    try {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      if (!user.socials) {
+        throw new HttpException('No social media links found', HttpStatus.NOT_FOUND);
+      }
+
+      const socialIndex = user.socials.findIndex(social => social.id === id);
+      if (socialIndex === -1) {
+        throw new HttpException(
+          'Social media link not found',
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      user.socials.splice(socialIndex, 1);
+      await this.userRepository.save(user);
+
+      return {
+        message: 'Social media link deleted successfully',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to delete social media link',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   async updateUser(id: string, updateUserDto: UpdateUserDto): Promise<any> {
     if (!id) {
       throw new BadRequestException('User ID is required');
@@ -246,6 +376,99 @@ export class UserService {
       throw new HttpException(
         'Failed to change password',
         HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async updateSocialMediaById(userId: string, name: string, id: string, updateSocialMediaDto: UpdateSocialMediaDto) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    try {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      if (!user.socials) {
+        throw new HttpException('No social media links found', HttpStatus.NOT_FOUND);
+      }
+
+      const socialIndex = user.socials.findIndex(
+        social => social.name === name && social.id === id
+      );
+
+      if (socialIndex === -1) {
+        throw new HttpException(
+          `Social media link with name '${name}' and ID '${id}' not found`,
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      // Keep the existing id and name, only update the link
+      user.socials[socialIndex] = {
+        ...user.socials[socialIndex],
+        link: updateSocialMediaDto.link
+      };
+
+      await this.userRepository.save(user);
+
+      return {
+        message: 'Social media link updated successfully',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to update social media link',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  async deleteSocialMediaById(userId: string, name: string, id: string) {
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    try {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      if (!user.socials) {
+        throw new HttpException('No social media links found', HttpStatus.NOT_FOUND);
+      }
+
+      const socialIndex = user.socials.findIndex(
+        social => social.name === name && social.id === id
+      );
+
+      if (socialIndex === -1) {
+        throw new HttpException(
+          `Social media link with name '${name}' and ID '${id}' not found`,
+          HttpStatus.NOT_FOUND
+        );
+      }
+
+      user.socials.splice(socialIndex, 1);
+      await this.userRepository.save(user);
+
+      return {
+        message: 'Social media link deleted successfully',
+        status: HttpStatus.OK
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new HttpException(
+        'Failed to delete social media link',
+        HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
   }
