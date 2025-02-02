@@ -23,11 +23,8 @@ export class Project {
   @Column({ nullable: true })
   description: string;
 
-  @Column()
-  githubLink: string;
-
-  @Column()
-  liveProjectLink: string;
+  @Column({ nullable: true })
+  link: string;
 
   @CreateDateColumn()
   createdAt: Date;

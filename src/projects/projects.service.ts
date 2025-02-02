@@ -17,11 +17,6 @@ export class ProjectsService {
     return projectWithoutUser;
   }
 
-  private isValidGitHubLink = (githubLink: string): boolean => {
-    const githubLinkRegex = /^https?:\/\/(www\.)?github\.com\/[A-Za-z0-9_.-]+(\/[A-Za-z0-9_.-]+)?(\/)?$/;
-    return githubLinkRegex.test(githubLink);
-  };
-
   private isValidLink = (link: string): boolean => {
     try {
       const url = new URL(link);
@@ -33,13 +28,8 @@ export class ProjectsService {
 
   async create(createProjectDto: CreateProjectDto, userId: string) {
     try {
-
-      if (!this.isValidGitHubLink(createProjectDto.githubLink)) {
-        throw new BadRequestException('Invalid GitHub link format');
-      }
-
-      if (!this.isValidLink(createProjectDto.liveProjectLink)) {
-        throw new BadRequestException('Invalid live project link format');
+      if (!this.isValidLink(createProjectDto.link)) {
+        throw new BadRequestException('Invalid project link format');
       }
 
       const project = this.projectRepository.create({
@@ -68,8 +58,7 @@ export class ProjectsService {
         select: {
           id: true,
           name: true,
-          githubLink: true,
-          liveProjectLink: true,
+          link: true,
           createdAt: true,
         },
       });
@@ -91,8 +80,7 @@ export class ProjectsService {
         select: {
           id: true,
           name: true,
-          githubLink: true,
-          liveProjectLink: true,
+          link: true,
           createdAt: true,
         },
       });
@@ -140,12 +128,8 @@ export class ProjectsService {
         throw new BadRequestException('At least one field must have a non-empty value');
       }
 
-      if (updateProjectDto.githubLink && !this.isValidGitHubLink(updateProjectDto.githubLink)) {
-        throw new BadRequestException('Invalid GitHub link format');
-      }
-
-      if (updateProjectDto.liveProjectLink && !this.isValidLink(updateProjectDto.liveProjectLink)) {
-        throw new BadRequestException('Invalid live project link format');
+      if (updateProjectDto.link && !this.isValidLink(updateProjectDto.link)) {
+        throw new BadRequestException('Invalid project link format');
       }
 
       Object.assign(project, updateProjectDto);
