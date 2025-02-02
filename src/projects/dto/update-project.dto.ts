@@ -5,23 +5,15 @@ import { IsNotEmpty, IsOptional, IsString, IsUrl, ValidateIf } from 'class-valid
 export class UpdateProjectDto extends PartialType(CreateProjectDto) {
   @IsOptional()
   @IsString()
-  @ValidateIf((o) => !o.githubLink && !o.liveProjectLink && !o.technologies && !o.description)
+  @ValidateIf((o) => !o.link && !o.technologies && !o.description)
   @IsNotEmpty({ message: 'At least one field must be provided and not empty' })
   name?: string;
 
   @IsOptional()
-  @ValidateIf((o) => !o.name && !o.liveProjectLink && !o.technologies && !o.description)
+  @ValidateIf((o) => !o.name && !o.technologies && !o.description)
   @IsNotEmpty({ message: 'At least one field must be provided and not empty' })
   @IsUrl({}, {
-    message: 'GitHub link must be a valid URL',
+    message: 'Project link must be a valid URL',
   })
-  githubLink?: string;
-
-  @IsOptional()
-  @ValidateIf((o) => !o.name && !o.githubLink && !o.technologies && !o.description)
-  @IsNotEmpty({ message: 'At least one field must be provided and not empty' })
-  @IsUrl({}, {
-    message: 'Live project link must be a valid URL',
-  })
-  liveProjectLink?: string;
+  link?: string;
 }
