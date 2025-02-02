@@ -19,6 +19,8 @@ import { IUser } from '../types';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { SocialMediaDto } from './dto/social-media.dto';
+import { UpdateSocialMediaDto } from './dto/update-social-media.dto';
 
 @ApiTags('User')
 @ApiBearerAuth('access-token')
@@ -45,6 +47,41 @@ export class UserController {
   @UsePipes(new ValidationPipe())
   updateUser(@Req() req, @Body() updateUserDto: UpdateUserDto) {
     return this.userService.updateUser(req.user.id, updateUserDto);
+  }
+
+  @Post('socials')
+  @ApiOperation({ summary: 'Add a new social media link' })
+  @ApiBody({ type: SocialMediaDto })
+  @ApiResponse({ status: 201, description: 'Social media link added successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @UsePipes(new ValidationPipe())
+  addSocialMedia(@Req() req, @Body() socialMediaDto: SocialMediaDto) {
+    return this.userService.addSocialMedia(req.user.id, socialMediaDto);
+  }
+
+  @Patch('socials/:id')
+  @ApiOperation({ summary: 'Update a social media link by ID' })
+  @ApiBody({ type: UpdateSocialMediaDto })
+  @ApiResponse({ status: 200, description: 'Social media link updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Social media link not found' })
+  @UsePipes(new ValidationPipe())
+  updateSocialMedia(
+    @Req() req,
+    @Param('id') id: string,
+    @Body() updateSocialMediaDto: UpdateSocialMediaDto
+  ) {
+    return this.userService.updateSocialMedia(req.user.id, id, updateSocialMediaDto);
+  }
+
+  @Delete('socials/:id')
+  @ApiOperation({ summary: 'Delete a social media link by ID' })
+  @ApiResponse({ status: 200, description: 'Social media link deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Social media link not found' })
+  deleteSocialMedia(@Req() req, @Param('id') id: string) {
+    return this.userService.deleteSocialMedia(req.user.id, id);
   }
 
   @Post('change-password')
