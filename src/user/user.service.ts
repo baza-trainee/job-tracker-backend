@@ -81,6 +81,29 @@ export class UserService {
     ],
   };
 
+  private readonly defaultSocials = [
+    {
+      id: uuidv4(),
+      name: 'Telegram',
+      link: ''
+    },
+    {
+      id: uuidv4(),
+      name: 'GitHub',
+      link: ''
+    },
+    {
+      id: uuidv4(),
+      name: 'LinkedIn',
+      link: ''
+    },
+    {
+      id: uuidv4(),
+      name: 'Behance',
+      link: ''
+    }
+  ];
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
