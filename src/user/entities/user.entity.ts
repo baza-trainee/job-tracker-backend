@@ -30,6 +30,7 @@ export class User {
   @Column({ nullable: true })
   phone: string;
 
+
   @ApiProperty({ description: 'User`s social media links' })
   @Column('json', { nullable: true })
   socials: Array<{ id: string; name: string; link: string }>;

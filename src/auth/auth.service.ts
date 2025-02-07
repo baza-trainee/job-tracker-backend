@@ -45,6 +45,28 @@ export class AuthService {
         id: uuidv4(),
         email: createUserDto.email,
         password: await argon2.hash(createUserDto.password),
+        socials: [
+          {
+            id: uuidv4(),
+            name: 'Telegram',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'GitHub',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'LinkedIn',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'Behance',
+            link: ''
+          }
+        ]
       });
 
       return this.generateTokens(user);
