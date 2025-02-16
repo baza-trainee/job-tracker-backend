@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { SocialMediaDto } from './dto/social-media.dto';
 import { UpdateSocialMediaDto } from './dto/update-social-media.dto';
+import { DeleteUserDto } from './dto/delete-user.dto';
 
 @ApiTags('User')
 @ApiBearerAuth('access-token')
@@ -93,16 +94,20 @@ export class UserController {
     return this.userService.changePassword(req.user, changePasswordDto);
   }
 
+  @Delete()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete user and all related data' })
+  @ApiBody({ type: DeleteUserDto })
   @ApiResponse({
     status: 200,
     description: 'User and all related data successfully deleted',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - User ID is required' })
+  @ApiResponse({ status: 400, description: 'Bad Request - Invalid credentials' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid password' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  @Delete(':id')
-  async deleteUser(@Param('id') id: string) {
-    return this.userService.deleteUser(id);
+  @UsePipes(new ValidationPipe())
+  deleteUser(@Req() req, @Body() deleteUserDto: DeleteUserDto) {
+    return this.userService.deleteUser(req.user.id, deleteUserDto);
   }
 }
