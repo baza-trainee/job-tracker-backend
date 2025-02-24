@@ -497,7 +497,7 @@ export class UserService {
     }
   }
 
-  async deleteUser(userId: string, deleteUserDto: { password: string }): Promise<any> {
+  async deleteUser(userId: string): Promise<any> {
     if (!userId) {
       throw new BadRequestException('User ID is required');
     }
@@ -507,7 +507,6 @@ export class UserService {
         where: { id: userId },
         select: {
           id: true,
-          password: true,
           vacancies: true,
           resumes: true,
           coverLetters: true,
@@ -532,11 +531,6 @@ export class UserService {
           'No account found with this ID',
           HttpStatus.NOT_FOUND,
         );
-      }
-
-      const isPasswordValid = await argon2.verify(user.password, deleteUserDto.password);
-      if (!isPasswordValid) {
-        throw new UnauthorizedException('Invalid password');
       }
 
       await this.userRepository.remove(user);

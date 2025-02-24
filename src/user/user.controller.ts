@@ -102,12 +102,11 @@ export class UserController {
     status: 200,
     description: 'User and all related data successfully deleted',
   })
-  @ApiResponse({ status: 400, description: 'Bad Request - Invalid credentials' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid password' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
   @UsePipes(new ValidationPipe())
-  deleteUser(@Req() req, @Body() deleteUserDto: DeleteUserDto) {
-    return this.userService.deleteUser(req.user.id, deleteUserDto);
+  deleteUser(@Req() req) {
+    return this.userService.deleteUser(req.user.id);
   }
 }
