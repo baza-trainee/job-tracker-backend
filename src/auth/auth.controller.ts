@@ -34,8 +34,8 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User signed in', type: AuthResponse })
   @ApiResponse({ status: 401, description: 'Invalid login or password' })
   @ApiResponse({ status: 500, description: 'Internal server error' })
-  async login(@Body() loginUserDto: LoginUserDto) {
-    return this.authService.login(loginUserDto);
+  async login(@Body() loginUserDto: LoginUserDto, @Req() req: Request) {
+    return this.authService.login(loginUserDto, req);
   }
 
   @Post('logout')

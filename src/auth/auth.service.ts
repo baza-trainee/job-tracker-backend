@@ -81,7 +81,7 @@ export class AuthService {
     }
   }
 
-  async login(loginUserDto: LoginUserDto) {
+  async login(loginUserDto: LoginUserDto, req: any) {
     if (!loginUserDto.email || !loginUserDto.password) {
       throw new BadRequestException('Email and password are required');
     }
@@ -102,7 +102,31 @@ export class AuthService {
         throw new UnauthorizedException('Invalid login credentials');
       }
 
-      return this.generateTokens(user);
+      // Get the user with their current invalidated tokens
+      const userWithTokens = await this.userRepository.findOne({
+        where: { id: user.id }
+      });
+
+      // Get current token if it exists in the request
+      const currentToken = this.extractTokenFromHeader(req);
+
+      // Initialize or get the invalidated tokens array
+      const invalidatedTokens = userWithTokens?.invalidatedTokens || [];
+
+      // If there's a current token and it's not already invalidated, add it
+      if (currentToken && !invalidatedTokens.includes(currentToken)) {
+        invalidatedTokens.push(currentToken);
+      }
+
+      // Update user with the new invalidated tokens list
+      await this.userRepository.update(user.id, {
+        invalidatedTokens
+      });
+
+      // Generate new tokens
+      const tokens = await this.generateTokens(user);
+
+      return tokens;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -343,9 +367,23 @@ export class AuthService {
 
   private async generateTokens(user: User) {
     try {
-      const payload = { email: user.email, sub: user.id };
+      const tokenJti = uuidv4(); // Generate unique token ID
+      const payload = {
+        email: user.email,
+        sub: user.id,
+        jti: tokenJti // Add unique token ID to payload
+      };
 
-      return {
+      // Get user's current tokens
+      const currentUser = await this.userRepository.findOne({
+        where: { id: user.id }
+      });
+
+      // Initialize or get the invalidated tokens array
+      const invalidatedTokens = currentUser?.invalidatedTokens || [];
+
+      // Generate new tokens
+      const tokens = {
         access_token: this.jwtService.sign(payload, {
           secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
           expiresIn: '1d',
@@ -355,6 +393,13 @@ export class AuthService {
           expiresIn: '7d',
         }),
       };
+
+      // Update user's invalidated tokens
+      await this.userRepository.update(user.id, {
+        invalidatedTokens: invalidatedTokens
+      });
+
+      return tokens;
     } catch (error) {
       throw new HttpException(
         'Failed to generate tokens',
