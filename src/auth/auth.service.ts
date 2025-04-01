@@ -386,11 +386,11 @@ export class AuthService {
       const tokens = {
         access_token: this.jwtService.sign(payload, {
           secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
-          expiresIn: '1d',
+          expiresIn: '15m', // 15 minutes
         }),
         refresh_token: this.jwtService.sign(payload, {
           secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-          expiresIn: '7d',
+          expiresIn: '7d', // 7 days
         }),
       };
 
