@@ -320,6 +320,28 @@ export class AuthService {
         email: req.user.email,
         username: `${req.user.firstName} ${req.user.lastName}`,
         avatar: req.user.picture,
+        socials: [
+          {
+            id: uuidv4(),
+            name: 'Telegram',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'GitHub',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'LinkedIn',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'Behance',
+            link: ''
+          }
+        ]
       });
     }
 
@@ -338,6 +360,28 @@ export class AuthService {
         id: uuidv4(),
         email: req.user.email,
         username: req.user.username,
+        socials: [
+          {
+            id: uuidv4(),
+            name: 'Telegram',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'GitHub',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'LinkedIn',
+            link: ''
+          },
+          {
+            id: uuidv4(),
+            name: 'Behance',
+            link: ''
+          }
+        ]
       });
     }
 
