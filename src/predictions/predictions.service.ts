@@ -49,17 +49,18 @@ export class PredictionsService {
       if (!userId) {
         throw new BadRequestException('Authorization is required');
       }
-      const predictions = await this.predictionRepository.find({
-        select: {
-          id: true,
-          textUk: true,
-          textEn: true,
-          createdAt: true
-        },
-        order: { createdAt: 'DESC' }
-      });
+      // Use query builder to ensure proper joins
+      const predictions = await this.predictionRepository
+        .createQueryBuilder('prediction')
+        .innerJoin('prediction.user', 'user')
+        .where('user.id = :userId', { userId })
+        .select(['prediction.id', 'prediction.textUk', 'prediction.textEn', 'prediction.createdAt'])
+        .orderBy('prediction.createdAt', 'DESC')
+        .getMany();
+
       return predictions;
     } catch (error) {
+      console.error('Error fetching predictions:', error);
       throw new InternalServerErrorException('Failed to fetch predictions');
     }
   }
@@ -190,11 +191,21 @@ export class PredictionsService {
 
       const recentPredictionIds = recentPredictions.map(h => h.prediction.id);
 
+      // First check if there are any predictions at all
+      const totalPredictions = await this.predictionRepository.count();
+      
+      if (totalPredictions === 0) {
+        // If there are no predictions at all, seed them first
+        await this.seed({ id: userId } as User);
+      }
+
       // Get a random prediction that wasn't shown in the last 90 days
-      let query = this.predictionRepository.createQueryBuilder('prediction');
+      let query = this.predictionRepository.createQueryBuilder('prediction')
+        .innerJoin('prediction.user', 'user')
+        .where('user.id = :userId', { userId });
 
       if (recentPredictionIds.length > 0) {
-        query = query.where('prediction.id NOT IN (:...recentIds)', { recentIds: recentPredictionIds });
+        query = query.andWhere('prediction.id NOT IN (:...recentIds)', { recentIds: recentPredictionIds });
       }
 
       const availablePredictions = await query.getMany();
