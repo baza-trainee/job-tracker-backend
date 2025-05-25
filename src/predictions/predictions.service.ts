@@ -129,6 +129,7 @@ export class PredictionsService {
     }
   }
 
+  //seed predictions
   async seed(user: User) {
     try {
       const filePath = path.join(process.cwd(), 'src', 'predictions', 'data', 'predictions.json');
@@ -193,7 +194,7 @@ export class PredictionsService {
 
       // First check if there are any predictions at all
       const totalPredictions = await this.predictionRepository.count();
-      
+
       if (totalPredictions === 0) {
         // If there are no predictions at all, seed them first
         await this.seed({ id: userId } as User);
