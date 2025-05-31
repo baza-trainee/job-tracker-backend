@@ -49,6 +49,18 @@ export class PredictionsService {
       if (!userId) {
         throw new BadRequestException('Authorization is required');
       }
+      
+      // Check if the user has any predictions at all
+      const userPredictionCount = await this.predictionRepository.count({
+        where: { user: { id: userId } }
+      });
+
+      // If the user has no predictions, seed them first
+      if (userPredictionCount === 0) {
+
+        await this.seed({ id: userId } as User);
+      }
+      
       // Use query builder to ensure proper joins
       const predictions = await this.predictionRepository
         .createQueryBuilder('prediction')
@@ -132,30 +144,41 @@ export class PredictionsService {
   //seed predictions
   async seed(user: User) {
     try {
+      console.log(`[SEED] Starting seed process for user ID: ${user.id}`);
       const filePath = path.join(process.cwd(), 'src', 'predictions', 'data', 'predictions.json');
+      console.log(`[SEED] Looking for predictions data file at: ${filePath}`);
 
       if (!fs.existsSync(filePath)) {
+        console.error(`[SEED] Predictions data file not found at: ${filePath}`);
         throw new NotFoundException('Predictions data file not found');
       }
 
+      console.log(`[SEED] Reading predictions data file`);
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(fileContent);
 
       if (!Array.isArray(data.predictions)) {
+        console.error(`[SEED] Invalid predictions data format: not an array`);
         throw new BadRequestException('Invalid predictions data format');
       }
 
+      console.log(`[SEED] Found ${data.predictions.length} predictions in data file`);
+      
       const predictions = data.predictions.map(prediction => ({
         ...prediction,
         user
       }));
 
+      console.log(`[SEED] Attempting to save ${predictions.length} predictions for user ID: ${user.id}`);
       const result = await this.predictionRepository.save(predictions);
+      console.log(`[SEED] Successfully saved ${result.length} predictions for user ID: ${user.id}`);
+      
       return {
         count: result.length,
         message: 'Predictions successfully seeded'
       };
     } catch (error) {
+      console.error(`[SEED] Error seeding predictions for user ID: ${user.id}`, error);
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
@@ -180,6 +203,14 @@ export class PredictionsService {
         return this.sanitizePrediction(todayPrediction.prediction);
       }
 
+      // First check if there are any predictions in the system at all
+      const totalPredictions = await this.predictionRepository.count();
+
+      if (totalPredictions === 0) {
+        // If there are no predictions at all in the system, seed them first
+        await this.seed({ id: userId } as User);
+      }
+
       // Check if the user has any predictions at all
       const userPredictionCount = await this.predictionRepository.count({
         where: { user: { id: userId } }
@@ -187,9 +218,18 @@ export class PredictionsService {
 
       // If the user has no predictions, seed them first
       if (userPredictionCount === 0) {
+
         await this.seed({ id: userId } as User);
-        // After seeding, recursively call this method to get a daily prediction
-        return this.getDailyPrediction(userId);
+        
+        // Verify that predictions were actually seeded
+        const verifyCount = await this.predictionRepository.count({
+          where: { user: { id: userId } }
+        });
+        
+        if (verifyCount === 0) {
+          // If still no predictions, use global predictions instead
+
+        }
       }
 
       // Get predictions shown in the last 90 days
@@ -204,24 +244,42 @@ export class PredictionsService {
 
       const recentPredictionIds = recentPredictions.map(h => h.prediction.id);
 
-      // First check if there are any predictions in the system at all
-      const totalPredictions = await this.predictionRepository.count();
+      // Try to get user's predictions first
+      let availablePredictions = [];
+      
+      if (userPredictionCount > 0) {
+        // Get a random prediction that wasn't shown in the last 90 days
+        let query = this.predictionRepository.createQueryBuilder('prediction')
+          .innerJoin('prediction.user', 'user')
+          .where('user.id = :userId', { userId });
 
-      if (totalPredictions === 0) {
-        // If there are no predictions at all in the system, seed them first
-        await this.seed({ id: userId } as User);
+        if (recentPredictionIds.length > 0) {
+          query = query.andWhere('prediction.id NOT IN (:...recentIds)', { recentIds: recentPredictionIds });
+        }
+
+        availablePredictions = await query.getMany();
       }
 
-      // Get a random prediction that wasn't shown in the last 90 days
-      let query = this.predictionRepository.createQueryBuilder('prediction')
-        .innerJoin('prediction.user', 'user')
-        .where('user.id = :userId', { userId });
+      // If no user predictions available, get any prediction from the system
+      if (availablePredictions.length === 0) {
 
-      if (recentPredictionIds.length > 0) {
-        query = query.andWhere('prediction.id NOT IN (:...recentIds)', { recentIds: recentPredictionIds });
+        
+        // Get a random prediction from any user
+        const globalPredictions = await this.predictionRepository.find({
+          take: 10, // Limit to 10 random predictions to choose from
+          order: { createdAt: 'DESC' }
+        });
+        
+        if (globalPredictions.length > 0) {
+          availablePredictions = globalPredictions;
+        } else {
+          // If still no predictions, try to seed again as a last resort
+          await this.seed({ id: userId } as User);
+          availablePredictions = await this.predictionRepository.find({
+            where: { user: { id: userId } }
+          });
+        }
       }
-
-      const availablePredictions = await query.getMany();
 
       // If all predictions were shown, start over
       if (!availablePredictions.length) {
@@ -258,6 +316,7 @@ export class PredictionsService {
       if (error instanceof NotFoundException) {
         throw error;
       }
+
       throw new InternalServerErrorException('Failed to get daily prediction');
     }
   }
