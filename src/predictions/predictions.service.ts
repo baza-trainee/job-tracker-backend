@@ -180,6 +180,18 @@ export class PredictionsService {
         return this.sanitizePrediction(todayPrediction.prediction);
       }
 
+      // Check if the user has any predictions at all
+      const userPredictionCount = await this.predictionRepository.count({
+        where: { user: { id: userId } }
+      });
+
+      // If the user has no predictions, seed them first
+      if (userPredictionCount === 0) {
+        await this.seed({ id: userId } as User);
+        // After seeding, recursively call this method to get a daily prediction
+        return this.getDailyPrediction(userId);
+      }
+
       // Get predictions shown in the last 90 days
       const ninetyDaysAgo = subDays(today, 90);
       const recentPredictions = await this.historyRepository.find({
@@ -192,11 +204,11 @@ export class PredictionsService {
 
       const recentPredictionIds = recentPredictions.map(h => h.prediction.id);
 
-      // First check if there are any predictions at all
+      // First check if there are any predictions in the system at all
       const totalPredictions = await this.predictionRepository.count();
 
       if (totalPredictions === 0) {
-        // If there are no predictions at all, seed them first
+        // If there are no predictions at all in the system, seed them first
         await this.seed({ id: userId } as User);
       }
 
