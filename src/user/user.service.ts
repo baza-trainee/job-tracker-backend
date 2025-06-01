@@ -143,7 +143,7 @@ export class UserService {
     }
 
     try {
-      // Get only the basic user data without any relations
+      // Get basic user data
       const userProfile = await this.userRepository.findOne({
         where: { email: user.email },
         select: ['id', 'email', 'username', 'phone', 'socials', 'createdAt']
@@ -156,17 +156,89 @@ export class UserService {
         );
       }
 
-      // Return just the basic user profile without any relations
-      // This avoids any potential performance issues
+      const userId = userProfile.id;
+
+      // Execute all queries in parallel for better performance
+      const [
+        userWithVacancies,
+        userWithResumes,
+        userWithCoverLetters,
+        userWithProjects,
+        userWithNotes,
+        userWithEvents
+      ] = await Promise.all([
+        // Get vacancies with their statuses
+        this.userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.vacancies', 'vacancies')
+          .leftJoinAndSelect('vacancies.statuses', 'statuses')
+          .where('user.id = :userId', { userId })
+          .orderBy({
+            'vacancies.createdAt': 'DESC',
+            'statuses.date': 'DESC',
+          })
+          .select([
+            'user.id',
+            ...this.selectFields.vacancy,
+            ...this.selectFields.status,
+          ])
+          .getOne(),
+        
+        // Get resumes
+        this.userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.resumes', 'resumes')
+          .where('user.id = :userId', { userId })
+          .orderBy('resumes.createdAt', 'DESC')
+          .select(['user.id', ...this.selectFields.resume])
+          .getOne(),
+        
+        // Get cover letters
+        this.userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.coverLetters', 'coverLetters')
+          .where('user.id = :userId', { userId })
+          .orderBy('coverLetters.createdAt', 'DESC')
+          .select(['user.id', ...this.selectFields.coverLetter])
+          .getOne(),
+        
+        // Get projects
+        this.userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.projects', 'projects')
+          .where('user.id = :userId', { userId })
+          .orderBy('projects.createdAt', 'DESC')
+          .select(['user.id', ...this.selectFields.project])
+          .getOne(),
+        
+        // Get notes
+        this.userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.notes', 'notes')
+          .where('user.id = :userId', { userId })
+          .orderBy('notes.createdAt', 'DESC')
+          .select(['user.id', ...this.selectFields.note])
+          .getOne(),
+        
+        // Get events
+        this.userRepository
+          .createQueryBuilder('user')
+          .leftJoinAndSelect('user.events', 'events')
+          .where('user.id = :userId', { userId })
+          .orderBy('events.date', 'ASC')
+          .select(['user.id', ...this.selectFields.event])
+          .getOne(),
+      ]);
+
+      // Combine all results into a single response
       return {
         ...userProfile,
-        // Initialize empty arrays for relations to maintain API compatibility
-        vacancies: [],
-        resumes: [],
-        coverLetters: [],
-        projects: [],
-        notes: [],
-        events: []
+        vacancies: userWithVacancies?.vacancies || [],
+        resumes: userWithResumes?.resumes || [],
+        coverLetters: userWithCoverLetters?.coverLetters || [],
+        projects: userWithProjects?.projects || [],
+        notes: userWithNotes?.notes || [],
+        events: userWithEvents?.events || []
       };
     } catch (error) {
       if (error instanceof HttpException) {
