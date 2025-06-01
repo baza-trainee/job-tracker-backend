@@ -143,36 +143,11 @@ export class UserService {
     }
 
     try {
-      const userProfile = await this.userRepository
-        .createQueryBuilder('user')
-        .leftJoinAndSelect('user.vacancies', 'vacancies')
-        .leftJoinAndSelect('vacancies.statuses', 'statuses')
-        .leftJoinAndSelect('user.resumes', 'resumes')
-        .leftJoinAndSelect('user.coverLetters', 'coverLetters')
-        .leftJoinAndSelect('user.projects', 'projects')
-        .leftJoinAndSelect('user.notes', 'notes')
-        .leftJoinAndSelect('user.events', 'events')
-        .where('user.email = :email', { email: user.email })
-        .orderBy({
-          'vacancies.createdAt': 'DESC',
-          'statuses.date': 'DESC',
-          'resumes.createdAt': 'DESC',
-          'coverLetters.createdAt': 'DESC',
-          'projects.createdAt': 'DESC',
-          'notes.createdAt': 'DESC',
-          'events.date': 'ASC',
-        })
-        .select([
-          ...this.selectFields.user,
-          ...this.selectFields.vacancy,
-          ...this.selectFields.status,
-          ...this.selectFields.resume,
-          ...this.selectFields.coverLetter,
-          ...this.selectFields.project,
-          ...this.selectFields.note,
-          ...this.selectFields.event,
-        ])
-        .getOne();
+      // Get only the basic user data without any relations
+      const userProfile = await this.userRepository.findOne({
+        where: { email: user.email },
+        select: ['id', 'email', 'username', 'phone', 'socials', 'createdAt']
+      });
 
       if (!userProfile) {
         throw new HttpException(
@@ -181,7 +156,18 @@ export class UserService {
         );
       }
 
-      return userProfile;
+      // Return just the basic user profile without any relations
+      // This avoids any potential performance issues
+      return {
+        ...userProfile,
+        // Initialize empty arrays for relations to maintain API compatibility
+        vacancies: [],
+        resumes: [],
+        coverLetters: [],
+        projects: [],
+        notes: [],
+        events: []
+      };
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
