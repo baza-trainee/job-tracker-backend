@@ -49,6 +49,18 @@ export class PredictionsService {
       if (!userId) {
         throw new BadRequestException('Authorization is required');
       }
+
+      // Check if the user has any predictions at all
+      const userPredictionCount = await this.predictionRepository.count({
+        where: { user: { id: userId } }
+      });
+
+      // If the user has no predictions, seed them first
+      if (userPredictionCount === 0) {
+
+        await this.seed({ id: userId } as User);
+      }
+
       // Use query builder to ensure proper joins
       const predictions = await this.predictionRepository
         .createQueryBuilder('prediction')
@@ -132,18 +144,22 @@ export class PredictionsService {
   //seed predictions
   async seed(user: User) {
     try {
-      const filePath = path.join(process.cwd(), 'src', 'predictions', 'data', 'predictions.json');
 
+      const filePath = path.join(process.cwd(), 'src', 'predictions', 'data', 'predictions.json');
       if (!fs.existsSync(filePath)) {
         throw new NotFoundException('Predictions data file not found');
       }
+
 
       const fileContent = fs.readFileSync(filePath, 'utf8');
       const data = JSON.parse(fileContent);
 
       if (!Array.isArray(data.predictions)) {
+
         throw new BadRequestException('Invalid predictions data format');
       }
+
+
 
       const predictions = data.predictions.map(prediction => ({
         ...prediction,
@@ -151,11 +167,13 @@ export class PredictionsService {
       }));
 
       const result = await this.predictionRepository.save(predictions);
+
       return {
         count: result.length,
         message: 'Predictions successfully seeded'
       };
     } catch (error) {
+
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
@@ -180,6 +198,16 @@ export class PredictionsService {
         return this.sanitizePrediction(todayPrediction.prediction);
       }
 
+      // Check if the user has any predictions at all
+      const userPredictionCount = await this.predictionRepository.count({
+        where: { user: { id: userId } }
+      });
+
+      // If the user has no predictions, seed them first
+      if (userPredictionCount === 0) {
+        await this.seed({ id: userId } as User);
+      }
+
       // Get predictions shown in the last 90 days
       const ninetyDaysAgo = subDays(today, 90);
       const recentPredictions = await this.historyRepository.find({
@@ -192,13 +220,8 @@ export class PredictionsService {
 
       const recentPredictionIds = recentPredictions.map(h => h.prediction.id);
 
-      // First check if there are any predictions at all
-      const totalPredictions = await this.predictionRepository.count();
-
-      if (totalPredictions === 0) {
-        // If there are no predictions at all, seed them first
-        await this.seed({ id: userId } as User);
-      }
+      // Try to get user's predictions first
+      let availablePredictions = [];
 
       // Get a random prediction that wasn't shown in the last 90 days
       let query = this.predictionRepository.createQueryBuilder('prediction')
@@ -209,7 +232,26 @@ export class PredictionsService {
         query = query.andWhere('prediction.id NOT IN (:...recentIds)', { recentIds: recentPredictionIds });
       }
 
-      const availablePredictions = await query.getMany();
+      availablePredictions = await query.getMany();
+
+      // If no user predictions available, get any prediction from the system
+      if (availablePredictions.length === 0) {
+        // Get a random prediction from any user
+        const globalPredictions = await this.predictionRepository.find({
+          take: 10, // Limit to 10 random predictions to choose from
+          order: { createdAt: 'DESC' }
+        });
+
+        if (globalPredictions.length > 0) {
+          availablePredictions = globalPredictions;
+        } else {
+          // If still no predictions, try to seed again as a last resort
+          await this.seed({ id: userId } as User);
+          availablePredictions = await this.predictionRepository.find({
+            where: { user: { id: userId } }
+          });
+        }
+      }
 
       // If all predictions were shown, start over
       if (!availablePredictions.length) {
